@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.expand_path("../../lib", __FILE__)
+
+require "rubygems"
+require "bundler/setup"
+
+require "fog/bouncer/cli"
+
+Fog::Bouncer::CLI.run
