@@ -66,8 +66,7 @@ describe Fog::Bouncer do
         douchebag = @fog.security_groups.get('douchebag')
         Fog::Bouncer::RemoteGroup.for(douchebag.name, @doorlist).to_ip_permissions.must_equal @doorlist.groups.first.to_ip_permissions
 
-        guido = @fog.security_groups.get('guido')
-        remote_guido = Fog::Bouncer::RemoteGroup.for(guido.name, @doorlist)
+        remote_guido = Fog::Bouncer::RemoteGroup.for('guido', @doorlist)
         source = remote_guido.sources.first
         source.user_alias.must_equal "jersey_shore"
         source.user_id.must_equal "1234567890"
