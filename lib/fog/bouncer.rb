@@ -7,7 +7,7 @@ require "fog/bouncer/version"
 module Fog
   module Bouncer
     def self.doorlists
-      @doorlists ||= []
+      @doorlists ||= {}
     end
 
     def self.fog
@@ -19,12 +19,15 @@ module Fog
       )
     end
 
-    def self.security(&block)
-      doorlists << Fog::Bouncer::Security.new(&block)
+    def self.security(name, &block)
+      doorlists[name] = Fog::Bouncer::Security.new(name, &block)
     end
 
     class Security
-      def initialize(&block)
+      attr_reader :name
+
+      def initialize(name, &block)
+        @name = name
         instance_eval(&block)
       end
 

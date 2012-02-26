@@ -7,7 +7,7 @@ A simple way to define and manage security groups for AWS through fog.
 ## Usage
 
 ```
-Fog::Bouncer.security do
+Fog::Bouncer.security :private do
   account "user", "1234567890"
 
   group "base", "Base Security Group" do

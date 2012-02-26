@@ -2,7 +2,7 @@ require "helper"
 
 describe Fog::Bouncer do
   before do
-    Fog::Bouncer.security do
+    Fog::Bouncer.security :private do
       account "jersey_shore", "1234567890"
 
       group "douchebag", "Don't let them in!" do
@@ -18,7 +18,7 @@ describe Fog::Bouncer do
       end
     end
 
-    @doorlist = Fog::Bouncer.doorlists.first
+    @doorlist = Fog::Bouncer.doorlists[:private]
 
     @fog = Fog::Bouncer.fog
   end
