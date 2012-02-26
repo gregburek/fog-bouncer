@@ -35,22 +35,24 @@ module Fog
         @accounts ||= {}
       end
 
-      def account(name, account_id)
-        accounts[name] = account_id
-      end
-
       def groups
         @groups ||= []
-      end
-
-      def group(name, description, &block)
-        groups << LocalGroup.new(name, description, self, &block)
       end
 
       def sync
         groups.each do |group|
           group.sync
         end
+      end
+
+      private
+
+      def account(name, account_id)
+        accounts[name] = account_id
+      end
+
+      def group(name, description, &block)
+        groups << LocalGroup.new(name, description, self, &block)
       end
     end
   end

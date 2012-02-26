@@ -37,7 +37,7 @@ describe Fog::Bouncer do
       source.must_be_kind_of Fog::Bouncer::Sources::CIDR
       source.range.must_equal "1.1.1.1/1"
 
-      protocol = source.protocols[:tcp].first
+      protocol = source.protocols.first
       protocol.must_be_kind_of Fog::Bouncer::Protocols::TCP
       protocol.from.must_equal 7070
       protocol.to.must_equal 8080

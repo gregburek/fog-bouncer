@@ -14,6 +14,10 @@ module Fog
 
         @source = source
       end
+
+      def type
+        @type ||= self.class.to_s.gsub("Fog::Bouncer::Protocols::", "").downcase
+      end
     end
 
     module Protocols

@@ -14,31 +14,31 @@ module Fog
         @sources ||= []
       end
 
-      def source(source, &block)
-        sources << Sources.for(source, self, &block)
-      end
-
       def to_ip_permissions
         permissions = []
 
         sources.each do |source|
-          source.protocols.each do |type, protocol|
-            protocol.each do |p|
-              permission = permissions.find { |permission| permission["IpProtocol"] == type.to_s && permission["FromPort"] == p.from && permission["ToPort"] == p.to }
-              unless permission
-                permission = { "Groups" => [], "IpRanges" => [], "IpProtocol" => type.to_s, "FromPort" => p.from, "ToPort" => p.to }
-                permissions << permission
-              end
-              if source.is_a?(Fog::Bouncer::Sources::CIDR)
-                permission["IpRanges"] << { "CidrIp" => source.range }
-              else
-                permission["Groups"] << { "UserId" => source.user_id, "GroupName" => source.name }
-              end
+          source.protocols.each do |protocol|
+            permission = permissions.find { |permission| permission["IpProtocol"] == protocol.type && permission["FromPort"] == protocol.from && permission["ToPort"] == protocol.to }
+            unless permission
+              permission = { "Groups" => [], "IpRanges" => [], "IpProtocol" => protocol.type, "FromPort" => protocol.from, "ToPort" => protocol.to }
+              permissions << permission
+            end
+            if source.is_a?(Fog::Bouncer::Sources::CIDR)
+              permission["IpRanges"] << { "CidrIp" => source.range }
+            else
+              permission["Groups"] << { "UserId" => source.user_id, "GroupName" => source.name }
             end
           end
         end
 
         permissions
+      end
+
+      private
+
+      def source(source, &block)
+        sources << Sources.for(source, self, &block)
       end
     end
 
