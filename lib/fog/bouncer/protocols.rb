@@ -18,6 +18,16 @@ module Fog
       def type
         @type ||= self.class.to_s.gsub("Fog::Bouncer::Protocols::", "").downcase
       end
+
+      def ==(other)
+        type == other.type &&
+        from == other.from &&
+        to == other.to
+      end
+
+      def inspect
+        "<#{self.class.name} @from=#{from.inspect} @to=#{to.inspect}>"
+      end
     end
 
     module Protocols

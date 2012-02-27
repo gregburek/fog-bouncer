@@ -10,45 +10,89 @@ module Fog
         instance_eval(&block) if block_given?
       end
 
+      def clone(sources)
+        clone = self.class.new(name, description, security)
+        clone.sources = sources
+        clone
+      end
+
       def sources
-        @sources ||= []
+        @sources ||= SourcesProxy.new
+      end
+
+      def sources=(sources)
+        @sources = sources
       end
 
       def to_ip_permissions
-        permissions = []
-
-        sources.each do |source|
-          source.protocols.each do |protocol|
-            permission = permissions.find { |permission| permission["IpProtocol"] == protocol.type && permission["FromPort"] == protocol.from && permission["ToPort"] == protocol.to }
-            unless permission
-              permission = { "Groups" => [], "IpRanges" => [], "IpProtocol" => protocol.type, "FromPort" => protocol.from, "ToPort" => protocol.to }
-              permissions << permission
-            end
-            if source.is_a?(Fog::Bouncer::Sources::CIDR)
-              permission["IpRanges"] << { "CidrIp" => source.range }
-            else
-              permission["Groups"] << { "UserId" => source.user_id, "GroupName" => source.name }
-            end
-          end
-        end
-
-        permissions
+        sources.to_ip_permissions
       end
 
-      private
+      def ==(other)
+        name == other.name &&
+        description == other.description
+      end
+
+      def inspect
+        "<#{self.class.name} @name=#{name} @description=#{description} @sources=#{sources.inspect}>"
+      end
 
       def source(source, &block)
-        sources << Sources.for(source, self, &block)
+        if existing = sources.find { |s| s.source == source }
+          existing.instance_eval(&block)
+        else
+          sources << Sources.for(source, self, &block)
+        end
       end
     end
 
     class LocalGroup < Group
-      def remote
-        @remote ||= RemoteGroup.for(name, security)
+      def extras
+        extras = SourcesProxy.new
+
+        local_sources = sources.collect { |source| source.source }
+
+        remote.sources.each do |source|
+          extras << source unless local_sources.include?(source.source)
+        end if remote
+
+        sources.each do |source|
+          if source.remote && source.extras?
+            extras << source.clone(source.extras)
+          end
+        end
+
+        extras
+      end
+
+      def extras?
+        extras.any?
+      end
+
+      def missing
+        missing = SourcesProxy.new
+
+        sources.each do |source|
+          if source.remote && source.missing?
+            missing << source.clone(source.missing)
+          elsif !source.remote
+            missing << source
+          end
+        end
+
+        missing
+      end
+
+      def missing?
+        missing.any?
       end
 
       def group_id
         remote.fog.group_id if remote
+      end
+
+      def remote
+        RemoteGroup.for(name, security)
       end
 
       def sync
@@ -68,6 +112,7 @@ module Fog
 
       def synchronize_sources
         remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => to_ip_permissions)
+        remote.reload
       end
     end
 
@@ -75,29 +120,46 @@ module Fog
       attr_accessor :fog
 
       def self.for(name, security)
-        if group = Fog::Bouncer.fog.security_groups.get(name)
-          remote = new(name, group.description, security) do
-            group.ip_permissions.each do |permission|
-              sources = []
-              sources = sources | permission["groups"].collect { |group| "#{group["groupName"]}@#{group["userId"]}" }
-              sources = sources | permission["ipRanges"].collect { |range| range["cidrIp"] }
-              sources.each do |s|
-                source s do
-                  case permission["ipProtocol"]
-                  when "icmp"
-                    icmp Range.new(permission["fromPort"], permission["toPort"])
-                  when "tcp"
-                    tcp Range.new(permission["fromPort"], permission["toPort"])
-                  when "udp"
-                    udp Range.new(permission["fromPort"], permission["toPort"])
-                  end
-                end
+        remote_group = security.remote_groups.find { |group| group.name == name }
+
+        if !remote_group && group = Fog::Bouncer.fog.security_groups.get(name)
+          remote_group = from(group, security)
+          security.remote_groups << remote_group
+        end
+
+        remote_group
+      end
+
+      def self.from(group, security)
+        remote = new(group.name, group.description, security)
+        remote.from(group)
+        remote
+      end
+
+      def from(group)
+        @sources = SourcesProxy.new
+        group.ip_permissions.each do |permission|
+          sources = []
+          sources = sources | permission["groups"].collect { |group| "#{group["groupName"]}@#{group["userId"]}" }
+          sources = sources | permission["ipRanges"].collect { |range| range["cidrIp"] }
+          sources.each do |s|
+            source s do
+              case permission["ipProtocol"]
+              when "icmp"
+                icmp Range.new(permission["fromPort"], permission["toPort"])
+              when "tcp"
+                tcp Range.new(permission["fromPort"], permission["toPort"])
+              when "udp"
+                udp Range.new(permission["fromPort"], permission["toPort"])
               end
             end
           end
-          remote.fog = group
-          remote
-        end
+        end if group.ip_permissions
+        @fog = group
+      end
+
+      def reload
+        from(fog.reload)
       end
     end
   end

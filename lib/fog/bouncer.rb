@@ -19,6 +19,25 @@ module Fog
       )
     end
 
+    def self.format
+      @format || :json
+    end
+
+    def self.format=(format)
+      @format = format
+    end
+
+    def self.formats
+      @formats ||= {
+        :diff => Fog::Bouncer::Formatters::Diff,
+        :json => Fog::Bouncer::Formatters::JSON
+      }
+    end
+
+    def self.formatter
+      formats[format]
+    end
+
     def self.security(name, &block)
       doorlists[name] = Fog::Bouncer::Security.new(name, &block)
     end
@@ -35,8 +54,46 @@ module Fog
         @accounts ||= {}
       end
 
+      def extras
+        extras = []
+
+        remote_groups.each do |group|
+          if g = groups.find { |g| g.name == group.name }
+            extras << g.clone(g.extras) if g.extras?
+          else
+            extras << group
+          end
+        end
+
+        groups.each do |group|
+          if group.remote && group.extras?
+            extras << group.clone(group.extras)
+          end
+        end
+
+        extras
+      end
+
       def groups
         @groups ||= []
+      end
+
+      def missing
+        missing = []
+
+        groups.each do |group|
+          if group.remote && group.missing?
+            missing << group.clone(group.missing)
+          else
+            missing << group
+          end
+        end
+
+        missing
+      end
+
+      def remote_groups
+        Fog::Bouncer.fog.security_groups.map { |group| RemoteGroup.from(group, self) }
       end
 
       def sync
@@ -53,6 +110,19 @@ module Fog
 
       def group(name, description, &block)
         groups << LocalGroup.new(name, description, self, &block)
+      end
+    end
+
+    class Formatter
+    end
+
+    module Formatters
+      class Diff < Formatter
+        def self.format(doorlist)
+        end
+      end
+
+      class JSON < Formatter
       end
     end
   end

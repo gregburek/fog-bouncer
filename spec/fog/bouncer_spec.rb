@@ -21,6 +21,8 @@ describe Fog::Bouncer do
     @doorlist = Fog::Bouncer.doorlists[:private]
 
     @fog = Fog::Bouncer.fog
+
+    Fog::Mock.reset if Fog.mocking?
   end
 
   it "bounces" do
@@ -72,5 +74,108 @@ describe Fog::Bouncer do
         source.user_id.must_equal "1234567890"
       end
     end
+
+    describe "#extras" do
+      before do
+        @group = Fog::Bouncer::RemoteGroup.from(@fog.security_groups.create(:name => "extra", :description => "Extra"), @doorlist)
+        @default = Fog::Bouncer::RemoteGroup.from(@fog.security_groups.get('default'), @doorlist)
+        @extras = @doorlist.extras
+      end
+
+      it "detects the extra groups" do
+        @extras.must_equal [@default, @group]
+      end
+    end
+
+    describe "#missing" do
+      before do
+        @missing = @doorlist.missing
+      end
+
+      it "detects the missing groups" do
+        @missing.must_equal @doorlist.groups
+      end
+    end
   end
+
+  describe Fog::Bouncer::LocalGroup do
+    describe "#extras" do
+      before do
+        @group = @doorlist.groups.first
+        @group.sync
+        @source = @group.sources.first
+        @group.sources.delete_if { |source| source.source == @source.source }
+        @extras = @doorlist.groups.first.extras
+      end
+
+      it "detects the extra sources" do
+        @extras.must_equal [@source]
+      end
+    end
+
+    describe "#missing" do
+      before do
+        @group = @doorlist.groups.first
+        @group.sync
+        @source = Fog::Bouncer::Sources.for("2.2.2.2/2", @group)
+        @source.protocols << Fog::Bouncer::Protocols::TCP.new(90, @source)
+        @group.sources << @source
+        @missing = @doorlist.groups.first.missing
+      end
+
+      it "detects the missing sources" do
+        @missing.must_equal [@source]
+      end
+    end
+  end
+
+  describe Fog::Bouncer::Source do
+    describe "#extras" do
+      before do
+        @group = @doorlist.groups.first
+        @group.sync
+        @source = @group.sources.first
+        @protocol = @source.protocols.first
+        @source.protocols.delete_if { |protocol| protocol.from == @protocol.from }
+        @extras = @source.extras
+      end
+
+      it "detects the extra protocols" do
+        @extras.must_equal [@protocol]
+      end
+    end
+
+    describe "#missing" do
+      before do
+        @group = @doorlist.groups.first
+        @group.sync
+        @source = Fog::Bouncer::Sources.for("1.1.1.1/1", @group)
+        @source.protocols << (@protocol = Fog::Bouncer::Protocols::TCP.new(90, @source))
+        @group.sources << @source
+        @missing = @source.missing
+      end
+
+      it "detects the missing protocols" do
+        @missing.must_equal [@protocol]
+      end
+    end
+  end
+
+  describe ".format" do
+    it "sets the output format" do
+      Fog::Bouncer.format = :diff
+      Fog::Bouncer.format.must_equal :diff
+      Fog::Bouncer.formatter.must_equal Fog::Bouncer::Formatters::Diff
+    end
+  end
+
+  #describe Fog::Bouncer::Formatters::Diff do
+    #describe ".format" do
+      #it "sets returns the difference between local and remote" do
+        #missing, extras = Fog::Bouncer::Formatters::Diff.format(@doorlist)
+
+        #missing.must_equal @doorlist.groups.collect { |group| group.to_ip_permissions }
+      #end
+    #end
+  #end
 end
