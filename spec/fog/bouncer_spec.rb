@@ -89,11 +89,21 @@ describe Fog::Bouncer do
 
     describe "#missing" do
       before do
-        @missing = @doorlist.missing
+        @douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }
+        @douchebag.sync
+        @guido = @doorlist.groups.find { |g| g.name == 'guido' }
       end
 
       it "detects the missing groups" do
-        @missing.must_equal @doorlist.groups
+        @doorlist.missing.must_equal [@guido]
+      end
+
+      it "detects groups with missing sources" do
+        source = Fog::Bouncer::Sources.for("2.2.2.2/2", @douchebag)
+        source.protocols << Fog::Bouncer::Protocols::TCP.new(90, source)
+        @douchebag.sources << source
+        cloned_douchebag = @douchebag.clone([source])
+        @doorlist.missing.must_equal [cloned_douchebag, @guido]
       end
     end
   end

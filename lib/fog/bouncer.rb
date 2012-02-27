@@ -84,7 +84,7 @@ module Fog
         groups.each do |group|
           if group.remote && group.missing?
             missing << group.clone(group.missing)
-          else
+          elsif !group.remote
             missing << group
           end
         end
