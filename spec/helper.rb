@@ -6,3 +6,4 @@ ENV['AWS_SECRET_ACCESS_KEY'] ||= "abcde1234"
 require "fog/bouncer"
 
 Fog.mock! unless ENV['FOG_REAL']
+
