@@ -19,13 +19,17 @@ describe Fog::Bouncer::Security do
     it "synchronises against AWS" do
       @fog.security_groups.size.must_equal 3
 
-      douchebag = @fog.security_groups.get('douchebag')
-      Fog::Bouncer::RemoteGroup.for(douchebag.name, @doorlist).to_ip_permissions.must_equal @doorlist.groups.first.to_ip_permissions
+      fog_douchebag = @fog.security_groups.get('douchebag')
+      douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }
+      Fog::Bouncer::RemoteGroup.for(fog_douchebag.name, @doorlist).to_ip_permissions.must_equal douchebag.to_ip_permissions
 
       remote_guido = Fog::Bouncer::RemoteGroup.for('guido', @doorlist)
       source = remote_guido.sources.first
       source.user_alias.must_equal "jersey_shore"
       source.user_id.must_equal "1234567890"
+
+      default = @fog.security_groups.get('default')
+      default.ip_permissions.must_be_empty
     end
   end
 
@@ -46,6 +50,7 @@ describe Fog::Bouncer::Security do
       @douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }
       @douchebag.sync
       @guido = @doorlist.groups.find { |g| g.name == 'guido' }
+      @default = @doorlist.groups.find { |g| g.name == 'default' }
     end
 
     it "detects the missing groups" do

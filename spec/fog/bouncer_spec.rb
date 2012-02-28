@@ -17,7 +17,7 @@ describe Fog::Bouncer do
 
   describe ".security" do
     it "has a douchebag group" do
-      douchebag = @doorlist.groups.first
+      douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }
       douchebag.name.must_equal "douchebag"
       douchebag.description.must_equal "Don't let them in!"
 

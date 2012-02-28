@@ -14,11 +14,11 @@ describe Fog::Bouncer do
   describe Fog::Bouncer::LocalGroup do
     describe "#extras" do
       before do
-        @group = @doorlist.groups.first
+        @group = @doorlist.groups.find { |g| g.name == 'douchebag' }
         @group.sync
         @source = @group.sources.first
         @group.sources.delete_if { |source| source.source == @source.source }
-        @extras = @doorlist.groups.first.extras
+        @extras = @group.extras
       end
 
       it "detects the extra sources" do

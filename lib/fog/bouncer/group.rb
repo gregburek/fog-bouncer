@@ -100,7 +100,20 @@ module Fog
         synchronize_sources
       end
 
-      private
+      def destroy_extras
+        if extras?
+          remote.fog.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions)
+          remote.reload
+        end
+      end
+
+      def create_missing
+        if missing?
+          create_missing_remote unless remote
+          remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
+          remote.reload
+        end
+      end
 
       def create_missing_remote
         return if remote
@@ -111,8 +124,8 @@ module Fog
       end
 
       def synchronize_sources
-        remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => to_ip_permissions)
-        remote.reload
+        destroy_extras
+        create_missing
       end
     end
 
@@ -156,6 +169,13 @@ module Fog
           end
         end if group.ip_permissions
         @fog = group
+      end
+
+      def destroy
+        fog.connection.revoke_security_group_ingress(name, "IpPermissions" => sources.to_ip_permissions)
+        unless name == "default"
+          fog.destroy
+        end
       end
 
       def reload

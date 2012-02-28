@@ -102,9 +102,21 @@ module Fog
         Fog::Bouncer.fog.security_groups.map { |group| RemoteGroup.from(group, self) }
       end
 
+      def local_group(group)
+        groups.find { |g| g.name == group.name }
+      end
+
       def sync
-        groups.each do |group|
-          group.sync
+        extras.each do |group|
+          if local = local_group(group)
+            local.destroy_extras
+          else
+            group.destroy
+          end
+        end
+
+        missing.each do |group|
+          group.create_missing
         end
       end
 
