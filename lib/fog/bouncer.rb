@@ -38,6 +38,12 @@ module Fog
       formats[format]
     end
 
+    def self.load(file)
+      if file && File.exists?(file)
+        instance_eval(File.read(file))
+      end
+    end
+
     def self.security(name, &block)
       doorlists[name] = Fog::Bouncer::Security.new(name, &block)
     end
