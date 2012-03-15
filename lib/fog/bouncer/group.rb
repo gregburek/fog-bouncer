@@ -48,21 +48,23 @@ module Fog
 
     class LocalGroup < Group
       def extras
-        extras = SourcesProxy.new
+        return @extras if @extras
+
+        @extras = SourcesProxy.new
 
         local_sources = sources.collect { |source| source.source }
 
         remote.sources.each do |source|
-          extras << source unless local_sources.include?(source.source)
+          @extras << source unless local_sources.include?(source.source)
         end if remote
 
         sources.each do |source|
           if source.remote && source.extras?
-            extras << source.clone(source.extras)
+            @extras << source.clone(source.extras)
           end
         end
 
-        extras
+        @extras
       end
 
       def extras?
@@ -70,17 +72,19 @@ module Fog
       end
 
       def missing
-        missing = SourcesProxy.new
+        return @missing if @missing
+
+        @missing = SourcesProxy.new
 
         sources.each do |source|
           if source.remote && source.missing?
-            missing << source.clone(source.missing)
+            @missing << source.clone(source.missing)
           elsif !source.remote
-            missing << source
+            @missing << source
           end
         end
 
-        missing
+        @missing
       end
 
       def missing?
@@ -92,7 +96,7 @@ module Fog
       end
 
       def remote
-        RemoteGroup.for(name, security)
+        @remote ||= RemoteGroup.for(name, security)
       end
 
       def sync
@@ -105,6 +109,7 @@ module Fog
           remote.fog.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions)
           remote.reload
         end
+        @extras = nil
       end
 
       def create_missing
@@ -113,6 +118,7 @@ module Fog
           remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
           remote.reload
         end
+        @missing = nil
       end
 
       def create_missing_remote
