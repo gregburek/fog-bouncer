@@ -37,7 +37,7 @@ describe Fog::Bouncer do
       source = guido.sources.first
       source.must_be_kind_of Fog::Bouncer::Sources::Group
       source.user_alias.must_equal "jersey_shore"
-      source.user_id.must_equal "1234567890"
+      source.user_id.must_equal ENV['AWS_ACCOUNT_ID']
       source.name.must_equal "douchebag"
     end
   end

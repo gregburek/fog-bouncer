@@ -34,7 +34,7 @@ module Fog
       end
 
       def inspect
-        "<#{self.class.name} @name=#{name} @description=#{description} @sources=#{sources.inspect}>"
+        "<#{self.class.name} @name=#{name.inspect} @description=#{description.inspect} @sources=#{sources.inspect}>"
       end
 
       def source(source, &block)
@@ -109,18 +109,19 @@ module Fog
 
       def create_missing
         if missing?
-          create_missing_remote unless remote
+          create_missing_remote
           remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
           remote.reload
         end
       end
 
       def create_missing_remote
-        return if remote
-
-        Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
-
-        remote = RemoteGroup.for(name, security)
+        if remote
+          remote.reload
+        else
+          Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
+          remote = RemoteGroup.for(name, security)
+        end
       end
 
       def synchronize_sources
@@ -171,8 +172,13 @@ module Fog
         @fog = group
       end
 
+      def revoke
+        fog.connection.revoke_security_group_ingress(name, "IpPermissions" => sources.to_ip_permissions) if sources.any?
+        reload
+      end
+
       def destroy
-        fog.connection.revoke_security_group_ingress(name, "IpPermissions" => sources.to_ip_permissions)
+        revoke
         unless name == "default"
           fog.destroy
         end

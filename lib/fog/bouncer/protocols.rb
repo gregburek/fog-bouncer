@@ -25,6 +25,10 @@ module Fog
         to == other.to
       end
 
+      def <=>(other)
+        [from, to] <=> [other.from, other.to]
+      end
+
       def inspect
         "<#{self.class.name} @from=#{from.inspect} @to=#{to.inspect}>"
       end

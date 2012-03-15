@@ -61,23 +61,24 @@ module Fog
       end
 
       def extras
-        extras = []
+        return @extras if @extras
+        @extras = []
 
         remote_groups.each do |group|
           if g = groups.find { |g| g.name == group.name }
-            extras << g.clone(g.extras) if g.extras?
+            @extras << g.clone(g.extras) if g.extras?
           else
-            extras << group
+            @extras << group
           end
         end
 
         groups.each do |group|
           if group.remote && group.extras?
-            extras << group.clone(group.extras)
+            @extras << group.clone(group.extras)
           end
         end
 
-        extras
+        @extras
       end
 
       def groups
@@ -85,25 +86,30 @@ module Fog
       end
 
       def missing
-        missing = []
+        return @missing if @missing
+        @missing = []
 
         groups.each do |group|
           if group.remote && group.missing?
-            missing << group.clone(group.missing)
+            @missing << group.clone(group.missing)
           elsif !group.remote
-            missing << group
+            @missing << group
           end
         end
 
-        missing
+        @missing
       end
 
       def remote_groups
-        Fog::Bouncer.fog.security_groups.map { |group| RemoteGroup.from(group, self) }
+        @remote_groups ||= Fog::Bouncer.fog.security_groups.map { |group| RemoteGroup.from(group, self) }
       end
 
       def local_group(group)
         groups.find { |g| g.name == group.name }
+      end
+
+      def reset!
+        @extras = @missing = @remote_groups = nil
       end
 
       def sync
@@ -118,6 +124,8 @@ module Fog
         missing.each do |group|
           group.create_missing
         end
+
+        reset!
       end
 
       private

@@ -1,5 +1,5 @@
 Fog::Bouncer.security :private do
-  account "jersey_shore", "1234567890"
+  account "jersey_shore", ENV['AWS_ACCOUNT_ID']
 
   group "douchebag", "Don't let them in!" do
     source "1.1.1.1/1" do

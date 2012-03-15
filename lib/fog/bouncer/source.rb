@@ -72,7 +72,7 @@ module Fog
       def ==(other)
         source == other.source &&
         group == other.group &&
-        protocols == other.protocols
+        protocols.sort! == other.protocols.sort!
       end
 
       def inspect

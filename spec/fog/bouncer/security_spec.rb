@@ -21,12 +21,12 @@ describe Fog::Bouncer::Security do
 
       fog_douchebag = @fog.security_groups.get('douchebag')
       douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }
-      Fog::Bouncer::RemoteGroup.for(fog_douchebag.name, @doorlist).to_ip_permissions.must_equal douchebag.to_ip_permissions
+      Fog::Bouncer::RemoteGroup.for(fog_douchebag.name, @doorlist).sources.must_equal douchebag.sources
 
       remote_guido = Fog::Bouncer::RemoteGroup.for('guido', @doorlist)
       source = remote_guido.sources.first
       source.user_alias.must_equal "jersey_shore"
-      source.user_id.must_equal "1234567890"
+      source.user_id.must_equal ENV['AWS_ACCOUNT_ID']
 
       default = @fog.security_groups.get('default')
       default.ip_permissions.must_be_empty
