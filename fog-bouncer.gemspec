@@ -4,8 +4,8 @@ require File.expand_path('../lib/fog/bouncer/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Dylan Egan"]
   gem.email         = ["dylanegan@gmail.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{A simple way to define and manage security groups for AWS through fog.}
+  gem.summary       = %q{A simple way to define and manage security groups for AWS through fog.}
   gem.homepage      = ""
 
   gem.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
