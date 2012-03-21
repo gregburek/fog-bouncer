@@ -19,25 +19,6 @@ module Fog
       )
     end
 
-    def self.format
-      @format || :json
-    end
-
-    def self.format=(format)
-      @format = format
-    end
-
-    def self.formats
-      @formats ||= {
-        :diff => Fog::Bouncer::Formatters::Diff,
-        :json => Fog::Bouncer::Formatters::JSON
-      }
-    end
-
-    def self.formatter
-      formats[format]
-    end
-
     def self.load(file)
       if file && File.exists?(file)
         instance_eval(File.read(file))
@@ -136,19 +117,6 @@ module Fog
 
       def group(name, description, &block)
         groups << LocalGroup.new(name, description, self, &block)
-      end
-    end
-
-    class Formatter
-    end
-
-    module Formatters
-      class Diff < Formatter
-        def self.format(doorlist)
-        end
-      end
-
-      class JSON < Formatter
       end
     end
   end

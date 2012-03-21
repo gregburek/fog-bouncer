@@ -41,12 +41,4 @@ describe Fog::Bouncer do
       source.name.must_equal "douchebag"
     end
   end
-
-  describe ".format" do
-    it "sets the output format" do
-      Fog::Bouncer.format = :diff
-      Fog::Bouncer.format.must_equal :diff
-      Fog::Bouncer.formatter.must_equal Fog::Bouncer::Formatters::Diff
-    end
-  end
 end
