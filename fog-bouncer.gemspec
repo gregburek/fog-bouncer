@@ -15,8 +15,8 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Fog::Bouncer::VERSION
 
-  gem.add_dependency "clamp"
-  gem.add_dependency "fog"
+  gem.add_dependency "clamp", "~> 0.3.0"
+  gem.add_dependency "fog", "~> 1.2.0"
   gem.add_dependency "rake"
 
   gem.add_development_dependency "minitest"
