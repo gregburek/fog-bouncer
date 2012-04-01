@@ -2,6 +2,7 @@ module Fog
   module Bouncer
     class Source
       attr_reader :group, :source
+      attr_accessor :local, :remote
 
       def self.log(data, &block)
         Fog::Bouncer.log({ source: true }.merge(data), &block)
@@ -14,53 +15,38 @@ module Fog
       def initialize(source, group, &block)
         @source = source
         @group = group
-        instance_eval(&block) if block_given?
-      end
-
-      def clone(protocols)
-        log(clone: true) do
-          clone = self.class.new(source, group)
-          clone.protocols = protocols
-          clone
+        if block_given?
+          @local = true
+          @wrap_local = true
+          instance_eval(&block)
+          @wrap_local = false
         end
       end
 
       def extras
-        extras = []
-
-        remote.protocols.each do |protocol|
-          unless has_protocol?(protocol)
-            extras << protocol
-          end
-        end
-
-        extras
+        protocols.select { |protocol| !protocol.local? }
       end
 
       def extras?
         extras.any?
       end
 
-      def has_protocol?(protocol_to_find)
-        found = protocols.find do |protocol|
-          protocol == protocol_to_find
+      def from_ip_protocol(protocol, from, to)
+        if %w( icmp tcp udp ).include? protocol
+          protocol = protocols.find { |p| p.type == protocol && p.from == from && p.to == to } || send("#{protocol}_protocol", Range.new(from, to))
+          protocol.remote = true
+          protocol
+        else
+          # raise
         end
+      end
 
-        !found.nil?
+      def local?
+        local
       end
 
       def missing
-        missing = []
-
-        return missing unless remote
-
-        protocols.each do |protocol|
-          unless remote.has_protocol?(protocol)
-            missing << protocol
-          end
-        end
-
-        missing
+        protocols.select { |protocol| protocol.local? && !protocol.remote? }
       end
 
       def missing?
@@ -75,8 +61,8 @@ module Fog
         @protocols = protocols
       end
 
-      def remote
-        group.remote.sources.find { |s| s.source == source } if group.remote
+      def remote?
+        remote
       end
 
       def ==(other)
@@ -92,15 +78,27 @@ module Fog
       private
 
       def icmp(*ports)
-        ports.each { |port| protocols << Fog::Bouncer::Protocols::ICMP.new(port, self) }
+        ports.each { |port| protocols << icmp_protocol(port) }
+      end
+
+      def icmp_protocol(port)
+        Fog::Bouncer::Protocols::ICMP.new(port, self, @wrap_local)
       end
 
       def tcp(*ports)
-        ports.each { |port| protocols << Fog::Bouncer::Protocols::TCP.new(port, self) }
+        ports.each { |port| protocols << tcp_protocol(port) }
+      end
+
+      def tcp_protocol(port)
+        Fog::Bouncer::Protocols::TCP.new(port, self, @wrap_local)
       end
 
       def udp(*ports)
-        ports.each { |port| protocols << Fog::Bouncer::Protocols::UDP.new(port, self) }
+        ports.each { |port| protocols << udp_protocol(port) }
+      end
+
+      def udp_protocol(port)
+        Fog::Bouncer::Protocols::UDP.new(port, self, @wrap_local)
       end
     end
   end

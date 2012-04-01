@@ -2,6 +2,7 @@ module Fog
   module Bouncer
     class Group
       attr_reader :name, :description, :security
+      attr_accessor :local, :remote
 
       def self.log(data, &block)
         Fog::Bouncer.log({ group: true }.merge(data), &block)
@@ -15,15 +16,48 @@ module Fog
         @name = name
         @description = description
         @security = security
-        instance_eval(&block) if block_given?
+        if block_given?
+          @local = true
+          instance_eval(&block)
+        end
       end
 
-      def clone(sources)
-        log(clone: true) do
-          clone = self.class.new(name, description, security)
-          clone.sources = sources
-          clone
+      def extras
+        Fog::Bouncer::SourcesProxy.new(sources.select { |source| !source.local? || source.extras? })
+      end
+
+      def extras?
+        extras.any?
+      end
+
+      def local?
+        local
+      end
+
+      def missing
+        Fog::Bouncer::SourcesProxy.new(sources.select { |source| !source.remote? || source.missing? })
+      end
+
+      def missing?
+        missing.any?
+      end
+
+      def from_ip_permissions(ip_permissions)
+        ip_permissions.each do |permission|
+          remote_sources = []
+          remote_sources = remote_sources | permission["groups"].collect { |group| "#{group["groupName"]}@#{group["userId"]}" }
+          remote_sources = remote_sources | permission["ipRanges"].collect { |range| range["cidrIp"] }
+          remote_sources.each do |s|
+            source = sources.find { |source| source.source == s }
+            source = Sources.for(s, self) if source.nil?
+            source.remote = true
+            source.from_ip_protocol(permission["ipProtocol"], permission["fromPort"], permission["toPort"])
+          end
         end
+      end
+
+      def remote?
+        !remote.nil?
       end
 
       def sources
@@ -47,68 +81,6 @@ module Fog
         "<#{self.class.name} @name=#{name.inspect} @description=#{description.inspect} @sources=#{sources.inspect}>"
       end
 
-      def source(source, &block)
-        if existing = sources.find { |s| s.source == source }
-          existing.instance_eval(&block)
-        else
-          sources << Sources.for(source, self, &block)
-        end
-      end
-    end
-
-    class LocalGroup < Group
-      def extras
-        return @extras if @extras
-
-        @extras = SourcesProxy.new
-
-        local_sources = sources.collect { |source| source.source }
-
-        remote.sources.each do |source|
-          @extras << source unless local_sources.include?(source.source)
-        end if remote
-
-        sources.each do |source|
-          if source.remote && source.extras?
-            @extras << source.clone(source.extras)
-          end
-        end
-
-        @extras
-      end
-
-      def extras?
-        extras.any?
-      end
-
-      def missing
-        return @missing if @missing
-
-        @missing = SourcesProxy.new
-
-        sources.each do |source|
-          if source.remote && source.missing?
-            @missing << source.clone(source.missing)
-          elsif !source.remote
-            @missing << source
-          end
-        end
-
-        @missing
-      end
-
-      def missing?
-        missing.any?
-      end
-
-      def group_id
-        remote.fog.group_id if remote
-      end
-
-      def remote
-        @remote ||= RemoteGroup.for(name, security)
-      end
-
       def sync
         log(sync: true) do
           create_missing_remote
@@ -120,7 +92,8 @@ module Fog
         if extras?
           log(destroy_extras: true) do
             extra.log(removing: true)
-            remote.fog.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions)
+            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions(true))
+            extras.each { |e| e.remote = true; e.extras.each { |p| p.remote = true } }
             remote.reload
           end
         end
@@ -133,7 +106,8 @@ module Fog
 
           log(create_missing: true) do
             missing.log(creating: true)
-            remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
+            remote.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
+            missing.each { |m| m.remote = true; m.missing.each { |p| p.remote = true } }
             remote.reload
           end
         end
@@ -141,12 +115,10 @@ module Fog
       end
 
       def create_missing_remote
-        if remote
-          remote.reload
-        else
+        unless remote
           log(create_missing_remote: true) do
             Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
-            remote = RemoteGroup.for(name, security)
+            remote = true
           end
         end
       end
@@ -157,71 +129,34 @@ module Fog
           create_missing
         end
       end
-    end
 
-    class RemoteGroup < Group
-      attr_accessor :fog
-
-      def self.for(name, security)
-        remote_group = security.remote_groups.find { |group| group.name == name }
-
-        if !remote_group && group = Fog::Bouncer.fog.security_groups.get(name)
-          remote_group = from(group, security)
-          security.remote_groups << remote_group
-        end
-
-        remote_group
-      end
-
-      def self.from(group, security)
-        remote = new(group.name, group.description, security)
-        remote.from(group)
-        remote
-      end
-
-      def from(group)
-        @sources = SourcesProxy.new
-        group.ip_permissions.each do |permission|
-          sources = []
-          sources = sources | permission["groups"].collect { |group| "#{group["groupName"]}@#{group["userId"]}" }
-          sources = sources | permission["ipRanges"].collect { |range| range["cidrIp"] }
-          sources.each do |s|
-            source s do
-              case permission["ipProtocol"]
-              when "icmp"
-                icmp Range.new(permission["fromPort"], permission["toPort"])
-              when "tcp"
-                tcp Range.new(permission["fromPort"], permission["toPort"])
-              when "udp"
-                udp Range.new(permission["fromPort"], permission["toPort"])
-              end
-            end
+      def destroy
+        revoke
+        if remote? && name != "default"
+          log(destroy: true) do
+            remote.destroy
+            remote = nil
           end
-        end if group.ip_permissions
-        @fog = group
+        end
       end
 
       def revoke
-        if sources.any?
+        if remote? && sources.any?
           log(revoke: true) do
             sources.log(revoking: true)
             fog.connection.revoke_security_group_ingress(name, "IpPermissions" => sources.to_ip_permissions)
           end
         end
-        reload
       end
 
-      def destroy
-        revoke
-        unless name == "default"
-          log(destroy: true) do
-            fog.destroy
-          end
+      private
+
+      def source(source, &block)
+        if existing = sources.find { |s| s.source == source }
+          existing.instance_eval(&block)
+        else
+          sources << Sources.for(source, self, &block)
         end
-      end
-
-      def reload
-        from(fog.reload)
       end
     end
   end

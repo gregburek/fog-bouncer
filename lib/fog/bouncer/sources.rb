@@ -11,11 +11,13 @@ module Fog
         end
       end
 
-      def to_ip_permissions
+      def to_ip_permissions(remote = false)
         permissions = []
 
         each do |source|
           source.protocols.each do |protocol|
+            next if (remote && !protocol.remote?) || (!remote && protocol.remote?)
+
             permission = permissions.find { |permission| permission["IpProtocol"] == protocol.type && permission["FromPort"] == protocol.from && permission["ToPort"] == protocol.to }
             unless permission
               permission = { "Groups" => [], "IpRanges" => [], "IpProtocol" => protocol.type, "FromPort" => protocol.from, "ToPort" => protocol.to }

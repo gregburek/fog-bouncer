@@ -16,15 +16,12 @@ Fog.mock! unless ENV['FOG_REAL']
 
 MiniTest::Unit.after_tests do
   Fog::Bouncer.doorlists.each do |name, doorlist|
-    doorlist.remote_groups.each do |group|
+    doorlist.groups.each do |group|
       group.revoke
     end
 
-    doorlist.remote_groups.each do |group|
+    doorlist.groups.each do |group|
       group.destroy
     end
-
-    doorlist.reset!
   end
 end
-

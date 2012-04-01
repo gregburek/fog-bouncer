@@ -1,9 +1,10 @@
 module Fog
   module Bouncer
     class Protocol
-      attr_reader :from, :source, :to
+      attr_reader :from, :local, :remote, :source, :to
+      attr_accessor :local, :remote
 
-      def initialize(port, source)
+      def initialize(port, source, local = false)
         if port.is_a?(Range)
           @from = port.begin
           @to = port.end
@@ -12,7 +13,16 @@ module Fog
           @to = port
         end
 
+        @local = local
         @source = source
+      end
+
+      def local?
+        local
+      end
+
+      def remote?
+        remote
       end
 
       def type
@@ -40,7 +50,7 @@ module Fog
 
     module Protocols
       class ICMP < Protocol
-        def initialize(port, source)
+        def initialize(port, source, local = false)
           super
 
           @from = @to = -1 if port == -1

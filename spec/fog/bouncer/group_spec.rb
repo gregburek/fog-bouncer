@@ -11,7 +11,7 @@ describe Fog::Bouncer do
     Fog::Mock.reset if Fog.mocking?
   end
 
-  describe Fog::Bouncer::LocalGroup do
+  describe Fog::Bouncer::Group do
     describe "#extras" do
       before do
         @group = @doorlist.groups.find { |g| g.name == 'douchebag' }

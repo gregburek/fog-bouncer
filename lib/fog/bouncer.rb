@@ -42,11 +42,12 @@ module Fog
     end
 
     class Security
-      attr_reader :name
+      attr_reader :name, :description
 
       def initialize(name, &block)
         @name = name
         instance_eval(&block)
+        groups_from_remote
       end
 
       def accounts
@@ -54,24 +55,7 @@ module Fog
       end
 
       def extras
-        return @extras if @extras
-        @extras = []
-
-        remote_groups.each do |group|
-          if g = groups.find { |g| g.name == group.name }
-            @extras << g.clone(g.extras) if g.extras?
-          else
-            @extras << group
-          end
-        end
-
-        groups.each do |group|
-          if group.remote && group.extras?
-            @extras << group.clone(group.extras)
-          end
-        end
-
-        @extras
+        groups.select { |group| !group.local? || group.extras? }
       end
 
       def groups
@@ -79,43 +63,16 @@ module Fog
       end
 
       def missing
-        return @missing if @missing
-        @missing = []
-
-        groups.each do |group|
-          if group.remote && group.missing?
-            @missing << group.clone(group.missing)
-          elsif !group.remote
-            @missing << group
-          end
-        end
-
-        @missing
-      end
-
-      def remote_groups
-        @remote_groups ||= Fog::Bouncer.fog.security_groups.map { |group| RemoteGroup.from(group, self) }
-      end
-
-      def local_group(group)
-        groups.find { |g| g.name == group.name }
-      end
-
-      def reset!
-        @extras = @missing = @remote_groups = nil
+        groups.select { |group| !group.remote? || group.missing? }
       end
 
       def sync
         extras.each do |group|
-          if local = local_group(group)
-            local.destroy_extras
-          else
-            group.destroy
-          end
+          group.sync
         end
 
         missing.each do |group|
-          group.create_missing
+          group.sync
         end
 
         reset!
@@ -128,7 +85,19 @@ module Fog
       end
 
       def group(name, description, &block)
-        groups << LocalGroup.new(name, description, self, &block)
+        groups << Group.new(name, description, self, &block)
+      end
+
+      def groups_from_remote
+        Fog::Bouncer.fog.security_groups.each do |remote_group|
+          group = groups.find { |group| group.name == remote_group.name }
+          group = Group.new(remote_group.name, description, self) if group.nil?
+
+          group.remote = remote_group
+          group.from_ip_permissions(remote_group.ip_permissions) if remote_group.ip_permissions
+
+          groups << group
+        end
       end
     end
   end
