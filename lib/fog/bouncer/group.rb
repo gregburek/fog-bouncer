@@ -49,7 +49,10 @@ module Fog
           remote_sources = remote_sources | permission["ipRanges"].collect { |range| range["cidrIp"] }
           remote_sources.each do |s|
             source = sources.find { |source| source.source == s }
-            source = Sources.for(s, self) if source.nil?
+            if source.nil?
+              source = Sources.for(s, self)
+              sources << source
+            end
             source.remote = true
             source.from_ip_protocol(permission["ipProtocol"], permission["fromPort"], permission["toPort"])
           end
@@ -78,7 +81,7 @@ module Fog
       end
 
       def inspect
-        "<#{self.class.name} @name=#{name.inspect} @description=#{description.inspect} @sources=#{sources.inspect}>"
+        "<#{self.class.name} @name=#{name.inspect} @description=#{description.inspect} @local=#{local} @remote=#{remote} @sources=#{sources.inspect}>"
       end
 
       def sync
@@ -115,10 +118,9 @@ module Fog
       end
 
       def create_missing_remote
-        unless remote
+        unless remote?
           log(create_missing_remote: true) do
-            Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
-            remote = true
+            @remote = Fog::Bouncer.fog.security_groups.create(:name => name, :description => description).reload
           end
         end
       end
@@ -135,16 +137,17 @@ module Fog
         if remote? && name != "default"
           log(destroy: true) do
             remote.destroy
-            remote = nil
+            @remote = nil
           end
         end
       end
 
       def revoke
-        if remote? && sources.any?
+        remote_sources = Fog::Bouncer::SourcesProxy.new(sources.select { |s| s.remote? })
+        if remote? && remote_sources.any?
           log(revoke: true) do
             sources.log(revoking: true)
-            fog.connection.revoke_security_group_ingress(name, "IpPermissions" => sources.to_ip_permissions)
+            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => remote_sources.to_ip_permissions(true))
           end
         end
       end

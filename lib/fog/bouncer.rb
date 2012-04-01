@@ -35,6 +35,10 @@ module Fog
       end
     end
 
+    def self.reset
+      @doorlists = {}
+    end
+
     def self.security(name, &block)
       Fog::Bouncer.log(security: true, name: name) do
         doorlists[name] = Fog::Bouncer::Security.new(name, &block)
@@ -85,18 +89,22 @@ module Fog
       end
 
       def group(name, description, &block)
-        groups << Group.new(name, description, self, &block)
+        group = groups.find { |group| group.name == name }
+        group = Group.new(name, description, self, &block) if group.nil?
+        groups << group
+        group
       end
 
       def groups_from_remote
         Fog::Bouncer.fog.security_groups.each do |remote_group|
           group = groups.find { |group| group.name == remote_group.name }
-          group = Group.new(remote_group.name, description, self) if group.nil?
+          if group.nil?
+            group = Group.new(remote_group.name, description, self)
+            groups << group
+          end
 
           group.remote = remote_group
           group.from_ip_permissions(remote_group.ip_permissions) if remote_group.ip_permissions
-
-          groups << group
         end
       end
     end

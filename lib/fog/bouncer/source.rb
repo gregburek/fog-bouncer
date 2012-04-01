@@ -15,6 +15,8 @@ module Fog
       def initialize(source, group, &block)
         @source = source
         @group = group
+        @local = false
+        @remote = false
         if block_given?
           @local = true
           @wrap_local = true
@@ -33,9 +35,13 @@ module Fog
 
       def from_ip_protocol(protocol, from, to)
         if %w( icmp tcp udp ).include? protocol
-          protocol = protocols.find { |p| p.type == protocol && p.from == from && p.to == to } || send("#{protocol}_protocol", Range.new(from, to))
-          protocol.remote = true
-          protocol
+          p = protocols.find { |p| p.type == protocol && p.from == from && p.to == to }
+          if p.nil?
+            p = send("#{protocol}_protocol", Range.new(from, to))
+            protocols << p
+          end
+          p.remote = true
+          p
         else
           # raise
         end
@@ -72,7 +78,7 @@ module Fog
       end
 
       def inspect
-        "<#{self.class.name} @source=#{source.inspect} @protocols=#{protocols.inspect}>"
+        "<#{self.class.name} @source=#{source.inspect} @local=#{local} @remote=#{remote} @protocols=#{protocols.inspect}>"
       end
 
       private
