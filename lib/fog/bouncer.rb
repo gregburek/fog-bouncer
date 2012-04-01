@@ -4,6 +4,10 @@ require "fog/bouncer/protocols"
 require "fog/bouncer/sources"
 require "fog/bouncer/version"
 
+require "scrolls"
+
+Scrolls::Log.start
+
 module Fog
   module Bouncer
     def self.doorlists
@@ -19,14 +23,22 @@ module Fog
       )
     end
 
+    def self.log(data, &block)
+      Scrolls.log({ 'fog-bouncer' => true }.merge(data), &block)
+    end
+
     def self.load(file)
       if file && File.exists?(file)
-        instance_eval(File.read(file))
+        Fog::Bouncer.log(load: true, file: file) do
+          instance_eval(File.read(file))
+        end
       end
     end
 
     def self.security(name, &block)
-      doorlists[name] = Fog::Bouncer::Security.new(name, &block)
+      Fog::Bouncer.log(security: true, name: name) do
+        doorlists[name] = Fog::Bouncer::Security.new(name, &block)
+      end
     end
 
     class Security

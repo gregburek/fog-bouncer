@@ -3,6 +3,14 @@ module Fog
     class Group
       attr_reader :name, :description, :security
 
+      def self.log(data, &block)
+        Fog::Bouncer.log({ group: true }.merge(data), &block)
+      end
+
+      def log(data, &block)
+        self.class.log({ name: name }.merge(data), &block)
+      end
+
       def initialize(name, description, security, &block)
         @name = name
         @description = description
@@ -11,9 +19,11 @@ module Fog
       end
 
       def clone(sources)
-        clone = self.class.new(name, description, security)
-        clone.sources = sources
-        clone
+        log(clone: true) do
+          clone = self.class.new(name, description, security)
+          clone.sources = sources
+          clone
+        end
       end
 
       def sources
@@ -100,14 +110,19 @@ module Fog
       end
 
       def sync
-        create_missing_remote
-        synchronize_sources
+        log(sync: true) do
+          create_missing_remote
+          synchronize_sources
+        end
       end
 
       def destroy_extras
         if extras?
-          remote.fog.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions)
-          remote.reload
+          log(destroy_extras: true) do
+            extra.log(removing: true)
+            remote.fog.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions)
+            remote.reload
+          end
         end
         @extras = nil
       end
@@ -115,8 +130,12 @@ module Fog
       def create_missing
         if missing?
           create_missing_remote
-          remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
-          remote.reload
+
+          log(create_missing: true) do
+            missing.log(creating: true)
+            remote.fog.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
+            remote.reload
+          end
         end
         @missing = nil
       end
@@ -125,14 +144,18 @@ module Fog
         if remote
           remote.reload
         else
-          Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
-          remote = RemoteGroup.for(name, security)
+          log(create_missing_remote: true) do
+            Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
+            remote = RemoteGroup.for(name, security)
+          end
         end
       end
 
       def synchronize_sources
-        destroy_extras
-        create_missing
+        log(synchronize_sources: true) do
+          destroy_extras
+          create_missing
+        end
       end
     end
 
@@ -179,14 +202,21 @@ module Fog
       end
 
       def revoke
-        fog.connection.revoke_security_group_ingress(name, "IpPermissions" => sources.to_ip_permissions) if sources.any?
+        if sources.any?
+          log(revoke: true) do
+            sources.log(revoking: true)
+            fog.connection.revoke_security_group_ingress(name, "IpPermissions" => sources.to_ip_permissions)
+          end
+        end
         reload
       end
 
       def destroy
         revoke
         unless name == "default"
-          fog.destroy
+          log(destroy: true) do
+            fog.destroy
+          end
         end
       end
 

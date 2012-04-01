@@ -6,6 +6,8 @@ ENV['AWS_ACCOUNT_ID'] ||= "1234567890"
 
 require "fog/bouncer"
 
+Scrolls::Log.start(File.open(File.dirname(__FILE__) + '/../logs/test.log', 'w'))
+
 def load_security(security)
   Fog::Bouncer.load File.dirname(__FILE__) + "/support/security/#{security}.rb"
 end
@@ -21,6 +23,8 @@ MiniTest::Unit.after_tests do
     doorlist.remote_groups.each do |group|
       group.destroy
     end
+
+    doorlist.reset!
   end
 end
 

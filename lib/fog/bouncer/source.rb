@@ -3,6 +3,14 @@ module Fog
     class Source
       attr_reader :group, :source
 
+      def self.log(data, &block)
+        Fog::Bouncer.log({ source: true }.merge(data), &block)
+      end
+
+      def log(data, &block)
+        self.class.log({ source: source }.merge(data), &block)
+      end
+
       def initialize(source, group, &block)
         @source = source
         @group = group
@@ -10,9 +18,11 @@ module Fog
       end
 
       def clone(protocols)
-        clone = self.class.new(source, group)
-        clone.protocols = protocols
-        clone
+        log(clone: true) do
+          clone = self.class.new(source, group)
+          clone.protocols = protocols
+          clone
+        end
       end
 
       def extras

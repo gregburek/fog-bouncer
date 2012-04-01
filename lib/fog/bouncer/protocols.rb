@@ -1,7 +1,7 @@
 module Fog
   module Bouncer
     class Protocol
-      attr_reader :from, :to
+      attr_reader :from, :source, :to
 
       def initialize(port, source)
         if port.is_a?(Range)
@@ -31,6 +31,10 @@ module Fog
 
       def inspect
         "<#{self.class.name} @from=#{from.inspect} @to=#{to.inspect}>"
+      end
+
+      def to_log
+        { source: source.source, protocol: type, from: from, to: to }
       end
     end
 

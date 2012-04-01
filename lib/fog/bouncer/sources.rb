@@ -3,6 +3,14 @@ require "fog/bouncer/source"
 module Fog
   module Bouncer
     class SourcesProxy < Array
+      def log(data)
+        each do |source|
+          source.protocols.each do |protocol|
+            Fog::Bouncer.log(data.merge(protocol.to_log))
+          end
+        end
+      end
+
       def to_ip_permissions
         permissions = []
 
@@ -37,14 +45,6 @@ module Fog
       class CIDR < Fog::Bouncer::Source
         def range
           @source
-        end
-
-        def sync
-          protocols.each do |type, rules|
-            rule.each do |rule|
-
-            end
-          end
         end
       end
 
