@@ -110,11 +110,17 @@ module Fog
       end
 
       def revoke
-        permissions = IPPermissions.from(sources.collect { |s| s.protocols }.flatten.compact, :remote => true)
+        permissions = sources.map do |source|
+          source.protocols.select { |p| p.remote? }
+        end.flatten.compact
+
         if remote? && permissions.any?
           log(revoke: true) do
-            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => permissions)
-            @sources = []
+            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => IPPermissions.from(permissions))
+            permissions.each do |protocol|
+              log({revoked: true}.merge(protocol.to_log))
+              protocol.source.protocols.delete_if { |p| p == protocol }
+            end
           end
         end
       end
