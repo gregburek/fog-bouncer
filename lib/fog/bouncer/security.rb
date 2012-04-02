@@ -10,7 +10,7 @@ module Fog
       end
 
       def accounts
-        @accounts ||= { 'amazon-elb' => 'amazon-elb' }
+        @accounts ||= { 'amazon-elb' => 'amazon-elb', 'self' => Fog::Bouncer.aws_account_id }
       end
 
       def extra_remote_groups

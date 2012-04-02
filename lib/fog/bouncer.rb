@@ -15,6 +15,10 @@ Scrolls::Log.start
 
 module Fog
   module Bouncer
+    def self.aws_account_id
+      ENV['AWS_ACCOUNT_ID']
+    end
+
     def self.doorlists
       @doorlists ||= {}
     end
