@@ -27,7 +27,7 @@ module Fog
       end
 
       def local?
-        local
+        !!local
       end
 
       def missing_remote_sources

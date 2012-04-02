@@ -18,7 +18,7 @@ module Fog
       end
 
       def local?
-        local
+        !!local
       end
 
       def remote?

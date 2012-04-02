@@ -29,10 +29,6 @@ module Fog
         protocols.select { |protocol| !protocol.local? }
       end
 
-      def extras?
-        extras.any?
-      end
-
       def from_ip_protocol(protocol, from, to)
         if %w( icmp tcp udp ).include? protocol
           p = protocols.find { |p| p.type == protocol && p.from == from && p.to == to }
@@ -48,15 +44,11 @@ module Fog
       end
 
       def local?
-        local
+        !!local
       end
 
       def missing
         protocols.select { |protocol| protocol.local? && !protocol.remote? }
-      end
-
-      def missing?
-        missing.any?
       end
 
       def protocols
