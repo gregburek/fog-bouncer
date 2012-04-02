@@ -10,7 +10,7 @@ module Fog
       end
 
       def accounts
-        @accounts ||= {}
+        @accounts ||= { 'amazon-elb' => 'amazon-elb' }
       end
 
       def extra_remote_groups

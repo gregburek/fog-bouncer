@@ -40,7 +40,7 @@ module Fog
           remote_sources = remote_sources | permission["groups"].collect { |group| "#{group["groupName"]}@#{group["userId"]}" }
           remote_sources = remote_sources | permission["ipRanges"].collect { |range| range["cidrIp"] }
           remote_sources.each do |s|
-            source = sources.find { |source| source.source == s }
+            source = existing_source_for(s)
             if source.nil?
               source = Sources.for(s, self)
               sources << source
@@ -121,8 +121,19 @@ module Fog
 
       private
 
+      def existing_source_for(source)
+        case source
+        when /^(.+)@(.+)$/
+          sources.find { |s| source == "#{s.name}@#{s.user_id}"}
+        when /^@(.+)$/
+          sources.find { |s| source == "@#{s.user_id}"}
+        else
+          sources.find { |s| source == s.source }
+        end
+      end
+
       def source(source, &block)
-        if existing = sources.find { |s| s.source == source }
+        if existing = existing_source_for(source)
           existing.instance_eval(&block)
         else
           sources << Sources.for(source, self, &block)
