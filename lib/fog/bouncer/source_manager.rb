@@ -21,10 +21,6 @@ module Fog
         end
       end
 
-      def clear
-        @group.revoke
-      end
-
       private
 
       def create_missing_source_permissions

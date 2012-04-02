@@ -63,10 +63,6 @@ module Fog
         @sources = sources
       end
 
-      def to_ip_permissions
-        sources.to_ip_permissions
-      end
-
       def ==(other)
         name == other.name &&
         description == other.description
