@@ -123,6 +123,8 @@ module Fog
 
       def existing_source_for(source)
         case source
+        when /^\d+\.\d+\.\d+.\d+\/\d+$/
+          sources.find { |s| source == s.source }
         when /^(.+)@(.+)$/
           sources.find { |s| source == "#{s.name}@#{s.user_id}"}
         when /^@(.+)$/
