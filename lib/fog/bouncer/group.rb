@@ -22,24 +22,16 @@ module Fog
         end
       end
 
-      def extras
-        Fog::Bouncer::SourcesProxy.new(sources.select { |source| !source.local? || source.extras? })
-      end
-
-      def extras?
-        extras.any?
+      def extra_remote_sources
+        sources.select { |source| !source.local? && source.remote? }
       end
 
       def local?
         local
       end
 
-      def missing
-        Fog::Bouncer::SourcesProxy.new(sources.select { |source| !source.remote? || source.missing? })
-      end
-
-      def missing?
-        missing.any?
+      def missing_remote_sources
+        sources.select { |source| source.local? && !source.remote? }
       end
 
       def from_ip_permissions(ip_permissions)
@@ -64,7 +56,7 @@ module Fog
       end
 
       def sources
-        @sources ||= SourcesProxy.new
+        @sources ||= []
       end
 
       def sources=(sources)
@@ -91,32 +83,6 @@ module Fog
         end
       end
 
-      def destroy_extras
-        if extras?
-          log(destroy_extras: true) do
-            extras.log(removing: true)
-            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions(true))
-            extras.each { |e| e.remote = true; e.extras.each { |p| p.remote = true } }
-            remote.reload
-          end
-        end
-        @extras = nil
-      end
-
-      def create_missing
-        if missing?
-          create_missing_remote
-
-          log(create_missing: true) do
-            missing.log(creating: true)
-            remote.connection.authorize_security_group_ingress(name, "IpPermissions" => missing.to_ip_permissions)
-            missing.each { |m| m.remote = true; m.missing.each { |p| p.remote = true } }
-            remote.reload
-          end
-        end
-        @missing = nil
-      end
-
       def create_missing_remote
         unless remote?
           log(create_missing_remote: true) do
@@ -127,27 +93,31 @@ module Fog
 
       def synchronize_sources
         log(synchronize_sources: true) do
-          destroy_extras
-          create_missing
+          SourceManager.new(self).synchronize
         end
       end
 
       def destroy
         revoke
-        if remote? && name != "default"
-          log(destroy: true) do
-            remote.destroy
-            @remote = nil
+        if remote?
+          if name != "default"
+            log(destroy: true) do
+              remote.destroy
+              @remote = nil
+              @security.groups.delete_if { |g| g.name == name }
+            end
+          else
+            log(destroy: false, group_name: name)
           end
         end
       end
 
       def revoke
-        remote_sources = Fog::Bouncer::SourcesProxy.new(sources.select { |s| s.remote? })
-        if remote? && remote_sources.any?
+        permissions = IPPermissions.from(sources.collect { |s| s.protocols }.flatten.compact, :remote => true)
+        if remote? && permissions.any?
           log(revoke: true) do
-            sources.log(revoking: true)
-            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => remote_sources.to_ip_permissions(true))
+            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => permissions)
+            @sources = []
           end
         end
       end

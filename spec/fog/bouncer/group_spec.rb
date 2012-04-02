@@ -8,21 +8,26 @@ describe Fog::Bouncer do
     load_security(:private)
 
     @doorlist = Fog::Bouncer.doorlists[:private]
-
     @fog = Fog::Bouncer.fog
-
-    @group = @doorlist.groups.find { |g| g.name == 'douchebag' }
-    @group.sync
+    @doorlist.sync
   end
 
   describe Fog::Bouncer::Group do
+    before do
+      @group = @doorlist.groups.find { |g| g.name == 'douchebag' }
+    end
+
     describe "#extras" do
       before do
         @group.from_ip_permissions([{ "ipProtocol" => "tcp", "fromPort" => 20, "toPort" => 20, "ipRanges" => [{ "cidrIp" => "2.2.2.2/2" }], "groups" => [] }])
+
+        @doorlist.clear_remote
       end
 
       it "detects the extra sources" do
-        @group.extras.must_equal @group.sources.select { |s| s.source == "2.2.2.2/2" }
+        @group.extra_remote_sources.must_equal @group.sources.select { |s| s.source == "2.2.2.2/2" }
+
+        @doorlist.clear_remote
       end
     end
 
@@ -30,11 +35,14 @@ describe Fog::Bouncer do
       before do
         @source = Fog::Bouncer::Sources.for("2.2.2.2/2", @group)
         @source.protocols << Fog::Bouncer::Protocols::TCP.new(90, @source)
+        @source.local = true
         @group.sources << @source
       end
 
       it "detects the missing sources" do
-        @group.missing.must_equal [@source]
+        @group.missing_remote_sources.must_equal [@source]
+
+        @doorlist.clear_remote
       end
     end
   end

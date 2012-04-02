@@ -8,9 +8,7 @@ describe Fog::Bouncer::Security do
     load_security(:private)
 
     @doorlist = Fog::Bouncer.doorlists[:private]
-
     @fog = Fog::Bouncer.fog
-
   end
 
   describe "#sync" do
@@ -32,37 +30,31 @@ describe Fog::Bouncer::Security do
 
       default = @fog.security_groups.get('default')
       default.ip_permissions.must_be_empty
+
+      @doorlist.clear_remote
     end
   end
 
-  describe "#extras" do
-    before do
-      @extras = @doorlist.extras
-      @default = @doorlist.groups.find { |g| g.name == "default" }
-    end
-
+  describe "#extra_remote_groups" do
     it "detects the extra groups" do
-      @extras.must_equal [@default]
+      @doorlist.extra_remote_groups.must_equal [@doorlist.groups.find { |g| g.name == "default"}]
+
+      @doorlist.clear_remote
     end
   end
 
-  describe "#missing" do
+  describe "#missing_remote_groups" do
     before do
-      @douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }
-      @douchebag.sync
-      @guido = @doorlist.groups.find { |g| g.name == 'guido' }
-      @default = @doorlist.groups.find { |g| g.name == 'default' }
+      @doorlist.sync
+      @new = Fog::Bouncer::Group.new('new', 'new', self)
+      @new.local = true
+      @doorlist.groups << @new
     end
 
     it "detects the missing groups" do
-      @doorlist.missing.must_equal [@guido]
-    end
+      @doorlist.missing_remote_groups.must_equal [@new]
 
-    it "detects groups with missing sources" do
-      source = Fog::Bouncer::Sources.for("2.2.2.2/2", @douchebag)
-      source.protocols << Fog::Bouncer::Protocols::TCP.new(90, source)
-      @douchebag.sources << source
-      @doorlist.missing.must_equal [@douchebag, @guido]
+      @doorlist.clear_remote
     end
   end
 end

@@ -2,39 +2,6 @@ require "fog/bouncer/source"
 
 module Fog
   module Bouncer
-    class SourcesProxy < Array
-      def log(data)
-        each do |source|
-          source.protocols.each do |protocol|
-            Fog::Bouncer.log(data.merge(protocol.to_log))
-          end
-        end
-      end
-
-      def to_ip_permissions(remote = false)
-        permissions = []
-
-        each do |source|
-          source.protocols.each do |protocol|
-            next if (remote && !protocol.remote?) || (!remote && protocol.remote?)
-
-            permission = permissions.find { |permission| permission["IpProtocol"] == protocol.type && permission["FromPort"] == protocol.from && permission["ToPort"] == protocol.to }
-            unless permission
-              permission = { "Groups" => [], "IpRanges" => [], "IpProtocol" => protocol.type, "FromPort" => protocol.from, "ToPort" => protocol.to }
-              permissions << permission
-            end
-            if source.is_a?(Fog::Bouncer::Sources::CIDR)
-              permission["IpRanges"] << { "CidrIp" => source.range }
-            else
-              permission["Groups"] << { "UserId" => source.user_id, "GroupName" => source.name }
-            end
-          end
-        end
-
-        permissions
-      end
-    end
-
     module Sources
       def self.for(source, group, &block)
         if source =~ /^\d+\.\d+\.\d+.\d+\/\d+$/
