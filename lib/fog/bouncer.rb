@@ -78,8 +78,6 @@ module Fog
         missing.each do |group|
           group.sync
         end
-
-        reset!
       end
 
       private

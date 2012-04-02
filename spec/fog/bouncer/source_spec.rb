@@ -2,13 +2,13 @@ require "helper"
 
 describe Fog::Bouncer do
   before do
+    Fog::Bouncer.reset
+    Fog::Mock.reset if Fog.mocking?
+
     load_security(:private)
 
     @doorlist = Fog::Bouncer.doorlists[:private]
-
     @fog = Fog::Bouncer.fog
-
-    Fog::Mock.reset if Fog.mocking?
   end
 
   describe Fog::Bouncer::Source do
@@ -18,7 +18,8 @@ describe Fog::Bouncer do
         @group.sync
         @source = @group.sources.first
         @protocol = @source.protocols.first
-        @source.protocols.delete_if { |protocol| protocol.from == @protocol.from }
+        @protocol.local = false
+        @protocol.remote = true
         @extras = @source.extras
       end
 
@@ -33,6 +34,8 @@ describe Fog::Bouncer do
         @group.sync
         @source = Fog::Bouncer::Sources.for("1.1.1.1/1", @group)
         @source.protocols << (@protocol = Fog::Bouncer::Protocols::TCP.new(90, @source))
+        @protocol.local = true
+        @protocol.remote = false
         @group.sources << @source
         @missing = @source.missing
       end

@@ -94,7 +94,7 @@ module Fog
       def destroy_extras
         if extras?
           log(destroy_extras: true) do
-            extra.log(removing: true)
+            extras.log(removing: true)
             remote.connection.revoke_security_group_ingress(name, "IpPermissions" => extras.to_ip_permissions(true))
             extras.each { |e| e.remote = true; e.extras.each { |p| p.remote = true } }
             remote.reload

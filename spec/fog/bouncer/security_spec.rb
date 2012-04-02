@@ -2,13 +2,15 @@ require "helper"
 
 describe Fog::Bouncer::Security do
   before do
+    Fog::Bouncer.reset
+    Fog::Mock.reset if Fog.mocking?
+
     load_security(:private)
 
     @doorlist = Fog::Bouncer.doorlists[:private]
 
     @fog = Fog::Bouncer.fog
 
-    Fog::Mock.reset if Fog.mocking?
   end
 
   describe "#sync" do
@@ -21,10 +23,10 @@ describe Fog::Bouncer::Security do
 
       fog_douchebag = @fog.security_groups.get('douchebag')
       douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }
-      Fog::Bouncer::RemoteGroup.for(fog_douchebag.name, @doorlist).sources.must_equal douchebag.sources
+      douchebag.remote.group_id.must_equal fog_douchebag.group_id
 
-      remote_guido = Fog::Bouncer::RemoteGroup.for('guido', @doorlist)
-      source = remote_guido.sources.first
+      source = @doorlist.groups.find { |g| g.name == 'guido' }.sources.first
+      assert source.remote # not sure of the minitest/spec equivalent
       source.user_alias.must_equal "jersey_shore"
       source.user_id.must_equal ENV['AWS_ACCOUNT_ID']
 
@@ -35,13 +37,12 @@ describe Fog::Bouncer::Security do
 
   describe "#extras" do
     before do
-      @group = Fog::Bouncer::RemoteGroup.from(@fog.security_groups.create(:name => "extra", :description => "Extra"), @doorlist)
-      @default = Fog::Bouncer::RemoteGroup.from(@fog.security_groups.get('default'), @doorlist)
       @extras = @doorlist.extras
+      @default = @doorlist.groups.find { |g| g.name == "default" }
     end
 
     it "detects the extra groups" do
-      @extras.must_equal [@default, @group]
+      @extras.must_equal [@default]
     end
   end
 
@@ -60,11 +61,8 @@ describe Fog::Bouncer::Security do
     it "detects groups with missing sources" do
       source = Fog::Bouncer::Sources.for("2.2.2.2/2", @douchebag)
       source.protocols << Fog::Bouncer::Protocols::TCP.new(90, source)
-      sources = Fog::Bouncer::SourcesProxy.new
-      sources << source
       @douchebag.sources << source
-      cloned_douchebag = @douchebag.clone(sources)
-      @doorlist.missing.must_equal [cloned_douchebag, @guido]
+      @doorlist.missing.must_equal [@douchebag, @guido]
     end
   end
 end
