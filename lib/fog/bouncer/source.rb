@@ -31,13 +31,7 @@ module Fog
 
       def from_ip_protocol(protocol, from, to)
         if %w( icmp tcp udp ).include? protocol
-          p = protocols.find { |p| p.type == protocol && p.from == from && p.to == to }
-          if p.nil?
-            p = send("#{protocol}_protocol", Range.new(from, to))
-            protocols << p
-          end
-          p.remote = true
-          p
+          add_protocol(protocol, Range.new(from, to), :remote => true)
         else
           # raise
         end
@@ -75,28 +69,38 @@ module Fog
 
       private
 
-      def icmp(*ports)
-        ports.each { |port| protocols << icmp_protocol(port) }
+      def add_protocol(type, port, options = {})
+        from, to = Protocol.range(port)
+        protocol = protocols.find { |p| p.type == type && p.from == from && p.to == to }
+        if protocol.nil?
+          protocol = case type.to_sym
+          when :icmp
+            Fog::Bouncer::Protocols::ICMP.new(port, self)
+          when :tcp
+            Fog::Bouncer::Protocols::TCP.new(port, self)
+          when :udp
+            Fog::Bouncer::Protocols::UDP.new(port, self)
+          end
+
+          protocols << protocol
+        end
+
+        protocol.local = !options[:local].nil?
+        protocol.remote = !options[:remote].nil?
+
+        protocol
       end
 
-      def icmp_protocol(port)
-        Fog::Bouncer::Protocols::ICMP.new(port, self, @wrap_local)
+      def icmp(*ports)
+        ports.each { |port| add_protocol(:icmp, port, :local => true) }
       end
 
       def tcp(*ports)
-        ports.each { |port| protocols << tcp_protocol(port) }
-      end
-
-      def tcp_protocol(port)
-        Fog::Bouncer::Protocols::TCP.new(port, self, @wrap_local)
+        ports.each { |port| add_protocol(:tcp, port, :local => true) }
       end
 
       def udp(*ports)
-        ports.each { |port| protocols << udp_protocol(port) }
-      end
-
-      def udp_protocol(port)
-        Fog::Bouncer::Protocols::UDP.new(port, self, @wrap_local)
+        ports.each { |port| add_protocol(:udp, port, :local => true) }
       end
     end
   end
