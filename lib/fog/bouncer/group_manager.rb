@@ -27,7 +27,14 @@ module Fog
         end
 
         @security.groups.each do |group|
-          group.destroy
+          begin
+            group.destroy
+          rescue Fog::Compute::AWS::Error => exception
+            unless exception.message =~ /InvalidGroup.InUse/
+              raise
+            end
+            log group_in_use: true, group_name: group.name
+          end
         end
       end
 
