@@ -82,7 +82,8 @@ module Fog
       def create_missing_remote
         unless remote?
           log(create_missing_remote: true) do
-            @remote = Fog::Bouncer.fog.security_groups.create(:name => name, :description => description).reload
+            @remote = Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
+            @remote.reload
           end
         end
       end

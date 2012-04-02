@@ -25,14 +25,12 @@ module Fog
           case source
           when /^(.+)@(.+)$/
             @name = $1
-            id_or_alias = $2
-            if id_or_alias[/^\d+$/]
-              @user_id = id_or_alias
+            @user_alias = $2
+            if @user_alias[/^\d+$/]
+              @user_id = @user_alias
               if account = group.security.accounts.find { |key, id| id == @user_id }
                 @user_alias = account[0]
               end
-            else
-              @user_alias = id_or_alias
             end
           when /^@(.+)$/
             @user_alias = $1
