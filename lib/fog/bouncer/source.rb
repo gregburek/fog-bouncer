@@ -31,7 +31,9 @@ module Fog
 
       def from_ip_protocol(protocol, from, to)
         if %w( icmp tcp udp ).include? protocol
-          add_protocol(protocol, Range.new(from, to), :remote => true)
+          p = add_protocol(protocol, Range.new(from, to))
+          p.remote = true
+          p
         else
           # raise
         end
@@ -69,7 +71,7 @@ module Fog
 
       private
 
-      def add_protocol(type, port, options = {})
+      def add_protocol(type, port)
         from, to = Protocol.range(port)
         protocol = protocols.find { |p| p.type == type && p.from == from && p.to == to }
         if protocol.nil?
@@ -85,22 +87,19 @@ module Fog
           protocols << protocol
         end
 
-        protocol.local = !options[:local].nil?
-        protocol.remote = !options[:remote].nil?
-
         protocol
       end
 
       def icmp(*ports)
-        ports.each { |port| add_protocol(:icmp, port, :local => true) }
+        ports.each { |port| p = add_protocol(:icmp, port); p.local = true }
       end
 
       def tcp(*ports)
-        ports.each { |port| add_protocol(:tcp, port, :local => true) }
+        ports.each { |port| p = add_protocol(:tcp, port); p.local = true }
       end
 
       def udp(*ports)
-        ports.each { |port| add_protocol(:udp, port, :local => true) }
+        ports.each { |port| p = add_protocol(:udp, port); p.local = true }
       end
     end
   end

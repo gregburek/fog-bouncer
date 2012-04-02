@@ -15,6 +15,8 @@ module Fog
       def initialize(port, source)
         @from, @to = Protocol.range(port)
         @source = source
+        @local = false
+        @remote = false
       end
 
       def local?

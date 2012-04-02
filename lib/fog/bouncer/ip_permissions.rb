@@ -5,10 +5,10 @@ module Fog
         permissions = []
 
         protocols.each do |protocol|
-          if options[:remote]
-            next if !protocol.remote?
+          if options[:remote_only]
+            next if protocol.local?
           end
-          if options[:local]
+          if options[:local_only]
             next if protocol.remote?
           end
 

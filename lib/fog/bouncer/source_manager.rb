@@ -25,7 +25,7 @@ module Fog
 
       def create_missing_source_permissions
         if missing_source_permissions.any?
-          @group.remote.connection.authorize_security_group_ingress(@group.name, "IpPermissions" => IPPermissions.from(missing_source_permissions, :local => true))
+          @group.remote.connection.authorize_security_group_ingress(@group.name, "IpPermissions" => IPPermissions.from(missing_source_permissions, :local_only => true))
           missing_source_permissions.each do |protocol|
             log({authorized: true}.merge(protocol.to_log))
             protocol.remote = true
@@ -41,7 +41,7 @@ module Fog
 
       def remove_extra_source_permissions
         if extra_source_permissions.any?
-          @group.remote.connection.revoke_security_group_ingress(@group.name, "IpPermissions" => IPPermissions.from(extra_source_permissions, :remote => true))
+          @group.remote.connection.revoke_security_group_ingress(@group.name, "IpPermissions" => IPPermissions.from(extra_source_permissions, :remote_only => true))
           extra_source_permissions.each do |protocol|
             log({revoked: true}.merge(protocol.to_log))
             protocol.source.protocols.delete_if { |p| p == protocol }
