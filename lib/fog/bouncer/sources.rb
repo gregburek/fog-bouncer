@@ -12,6 +12,10 @@ module Fog
       end
 
       class CIDR < Fog::Bouncer::Source
+        def match(source)
+          range == source
+        end
+
         def range
           @source
         end
@@ -36,7 +40,12 @@ module Fog
             @user_alias = $1
           else
             @name = source
+            @user_alias = 'self'
           end
+        end
+
+        def match(source)
+          "#{name}@#{user_id}" == source || "@#{user_id}" == source || name == source
         end
 
         def user_id

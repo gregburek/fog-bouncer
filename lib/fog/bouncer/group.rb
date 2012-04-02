@@ -122,16 +122,7 @@ module Fog
       private
 
       def existing_source_for(source)
-        case source
-        when /^\d+\.\d+\.\d+.\d+\/\d+$/
-          sources.find { |s| source == s.source }
-        when /^(.+)@(.+)$/
-          sources.find { |s| source == "#{s.name}@#{s.user_id}"}
-        when /^@(.+)$/
-          sources.find { |s| source == "@#{s.user_id}"}
-        else
-          sources.find { |s| source == s.source }
-        end
+        sources.find { |s| s.match(source) }
       end
 
       def source(source, &block)
