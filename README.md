@@ -47,3 +47,10 @@ export AWS_ACCOUNT_ID=... \
 
 fog-bouncer sync --file /tmp/fog-bouncer.rb
 ```
+
+## Environment
+
+`AWS_ACCOUNT_ID` - your Amazon Web Services account ID
+`AWS_ACCESS_KEY_ID` - your Amazon Web Services access key ID
+`AWS_SECRET_ACCESS_KEY` - your Amazon Web Services secret access key
+`PROVIDER_REGION` - your Amazon Web Services region. Defaults to us-east-1.
