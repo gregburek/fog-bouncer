@@ -2,13 +2,14 @@ require "helper"
 
 describe Fog::Bouncer do
   before do
+    Fog::Bouncer.reset
+    Fog::Mock.reset if Fog.mocking?
+
     load_security(:private)
 
     @doorlist = Fog::Bouncer.doorlists[:private]
-
+    @doorlist.import_remote_groups
     @fog = Fog::Bouncer.fog
-
-    Fog::Mock.reset if Fog.mocking?
   end
 
   it "bounces" do

@@ -6,7 +6,6 @@ module Fog
       def initialize(name, &block)
         @name = name
         instance_eval(&block)
-        groups_from_remote
       end
 
       def accounts
@@ -19,6 +18,14 @@ module Fog
 
       def groups
         @groups ||= []
+      end
+
+      def import_remote_groups
+        Fog::Bouncer.fog.security_groups.each do |remote_group|
+          group = group(remote_group.name, remote_group.description)
+          group.remote = remote_group
+          IPPermissions.to(group, remote_group.ip_permissions) if remote_group.ip_permissions
+        end
       end
 
       def missing_remote_groups
@@ -47,14 +54,6 @@ module Fog
         end
 
         group
-      end
-
-      def groups_from_remote
-        Fog::Bouncer.fog.security_groups.each do |remote_group|
-          group = group(remote_group.name, remote_group.description)
-          group.remote = remote_group
-          IPPermissions.to(group, remote_group.ip_permissions) if remote_group.ip_permissions
-        end
       end
     end
   end

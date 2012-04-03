@@ -8,6 +8,7 @@ describe Fog::Bouncer::Security do
     load_security(:private)
 
     @doorlist = Fog::Bouncer.doorlists[:private]
+    @doorlist.import_remote_groups
     @fog = Fog::Bouncer.fog
   end
 
