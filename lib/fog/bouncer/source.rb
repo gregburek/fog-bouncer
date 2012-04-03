@@ -52,10 +52,6 @@ module Fog
         @protocols ||= []
       end
 
-      def protocols=(protocols)
-        @protocols = protocols
-      end
-
       def remote
         @remote ||= false
       end

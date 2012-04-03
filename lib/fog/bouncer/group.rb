@@ -42,10 +42,6 @@ module Fog
         @sources ||= []
       end
 
-      def sources=(sources)
-        @sources = sources
-      end
-
       def sync
         log(sync: true) do
           create_missing_remote
