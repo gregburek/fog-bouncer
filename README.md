@@ -2,7 +2,7 @@
 
 ![fog-bouncer](https://github.com/dylanegan/fog-bouncer/raw/master/bouncer.jpg)
 
-A simple way to define and manage security groups for AWS through fog.
+A simple way to define and manage security groups for AWS with the backing support from fog.
 
 ## Usage
 
