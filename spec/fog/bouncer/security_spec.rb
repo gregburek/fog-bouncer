@@ -17,7 +17,7 @@ describe Fog::Bouncer::Security do
     end
 
     it "synchronises against AWS" do
-      @fog.security_groups.size.must_equal 3
+      @fog.security_groups.size.must_equal 4
 
       fog_douchebag = @fog.security_groups.get('douchebag')
       douchebag = @doorlist.groups.find { |g| g.name == 'douchebag' }

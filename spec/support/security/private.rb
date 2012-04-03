@@ -1,5 +1,5 @@
 Fog::Bouncer.security :private do
-  account "jersey_shore", ENV['AWS_ACCOUNT_ID']
+  account "jersey_shore", Fog::Bouncer.aws_account_id
 
   group "douchebag", "Don't let them in!" do
     source "1.1.1.1/1" do
@@ -15,6 +15,24 @@ Fog::Bouncer.security :private do
     source "douchebag@jersey_shore" do
       tcp 7070..8080
       udp 8081
+    end
+
+    source "other@#{Fog::Bouncer.aws_account_id}" do
+      icmp -1
+    end
+  end
+
+  group "other", "Some other randomness" do
+    source "@jersey_shore" do
+      icmp -1
+    end
+
+    source "douchebag" do
+      tcp 80
+    end
+
+    source "douchebag" do
+      udp 8080
     end
   end
 end
