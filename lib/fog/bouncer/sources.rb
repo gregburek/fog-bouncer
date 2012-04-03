@@ -36,8 +36,6 @@ module Fog
                 @user_alias = account[0]
               end
             end
-          when /^@(.+)$/
-            @user_alias = $1
           else
             @name = source
             @user_alias = 'self'
@@ -45,7 +43,7 @@ module Fog
         end
 
         def match(source)
-          "#{name}@#{user_id}" == source || "@#{user_id}" == source || name == source
+          "#{name}@#{user_id}" == source || name == source
         end
 
         def user_id

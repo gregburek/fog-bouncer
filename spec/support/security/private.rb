@@ -23,10 +23,6 @@ Fog::Bouncer.security :private do
   end
 
   group "other", "Some other randomness" do
-    source "@jersey_shore" do
-      icmp -1
-    end
-
     source "douchebag" do
       tcp 80
     end
