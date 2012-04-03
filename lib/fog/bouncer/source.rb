@@ -25,14 +25,23 @@ module Fog
         protocols.select { |protocol| !protocol.local? }
       end
 
-      def from_ip_protocol(protocol, from, to)
-        if %w( icmp tcp udp ).include? protocol
-          p = add_protocol(protocol, Range.new(from, to))
-          p.remote = true
-          p
-        else
-          # raise
+      def add_protocol(type, port)
+        from, to = Protocol.range(port)
+        protocol = protocols.find { |p| p.type == type && p.from == from && p.to == to }
+        if protocol.nil?
+          protocol = case type.to_sym
+          when :icmp
+            Fog::Bouncer::Protocols::ICMP.new(port, self)
+          when :tcp
+            Fog::Bouncer::Protocols::TCP.new(port, self)
+          when :udp
+            Fog::Bouncer::Protocols::UDP.new(port, self)
+          end
+
+          protocols << protocol
         end
+
+        protocol
       end
 
       def local
@@ -74,25 +83,6 @@ module Fog
       end
 
       private
-
-      def add_protocol(type, port)
-        from, to = Protocol.range(port)
-        protocol = protocols.find { |p| p.type == type && p.from == from && p.to == to }
-        if protocol.nil?
-          protocol = case type.to_sym
-          when :icmp
-            Fog::Bouncer::Protocols::ICMP.new(port, self)
-          when :tcp
-            Fog::Bouncer::Protocols::TCP.new(port, self)
-          when :udp
-            Fog::Bouncer::Protocols::UDP.new(port, self)
-          end
-
-          protocols << protocol
-        end
-
-        protocol
-      end
 
       def icmp(*ports)
         ports.each { |port| p = add_protocol(:icmp, port); p.local = true }

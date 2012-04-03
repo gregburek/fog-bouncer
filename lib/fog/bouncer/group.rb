@@ -34,23 +34,6 @@ module Fog
         sources.select { |source| source.local? && !source.remote? }
       end
 
-      def from_ip_permissions(ip_permissions)
-        ip_permissions.each do |permission|
-          remote_sources = []
-          remote_sources = remote_sources | permission["groups"].collect { |group| "#{group["groupName"]}@#{group["userId"]}" }
-          remote_sources = remote_sources | permission["ipRanges"].collect { |range| range["cidrIp"] }
-          remote_sources.each do |s|
-            source = existing_source_for(s)
-            if source.nil?
-              source = Sources.for(s, self)
-              sources << source
-            end
-            source.remote = true
-            source.from_ip_protocol(permission["ipProtocol"], permission["fromPort"], permission["toPort"])
-          end
-        end
-      end
-
       def remote?
         !remote.nil?
       end
@@ -132,7 +115,7 @@ module Fog
       end
 
       def source(source, &block)
-        if existing = existing_source_for(source)
+        if existing = sources.find { |s| s.match(source) }
           existing.instance_eval(&block)
         else
           sources << Sources.for(source, self, &block)

@@ -19,7 +19,7 @@ describe Fog::Bouncer do
 
     describe "#extras" do
       before do
-        @group.from_ip_permissions([{ "ipProtocol" => "tcp", "fromPort" => 20, "toPort" => 20, "ipRanges" => [{ "cidrIp" => "2.2.2.2/2" }], "groups" => [] }])
+        Fog::Bouncer::IPPermissions.to(@group, [{ "ipProtocol" => "tcp", "fromPort" => 20, "toPort" => 20, "ipRanges" => [{ "cidrIp" => "2.2.2.2/2" }], "groups" => [] }])
 
         @doorlist.clear_remote
       end

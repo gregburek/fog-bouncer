@@ -53,7 +53,7 @@ module Fog
         Fog::Bouncer.fog.security_groups.each do |remote_group|
           group = group(remote_group.name, remote_group.description)
           group.remote = remote_group
-          group.from_ip_permissions(remote_group.ip_permissions) if remote_group.ip_permissions
+          IPPermissions.to(group, remote_group.ip_permissions) if remote_group.ip_permissions
         end
       end
     end
