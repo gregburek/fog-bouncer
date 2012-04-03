@@ -11,8 +11,6 @@ require "fog/bouncer/source_manager"
 
 require "scrolls"
 
-Scrolls::Log.start
-
 module Fog
   module Bouncer
     def self.aws_account_id
@@ -33,7 +31,25 @@ module Fog
     end
 
     def self.log(data, &block)
+      log! unless logging?
       Scrolls.log({ 'fog-bouncer' => true }.merge(data), &block)
+    end
+
+    def self.log!
+      Scrolls::Log.start(logger)
+      @logging = true
+    end
+
+    def self.logger
+      @logger ||= STDOUT
+    end
+
+    def self.logger=(logger)
+      @logger = logger
+    end
+
+    def self.logging?
+      @logging ||= false
     end
 
     def self.load(file)
