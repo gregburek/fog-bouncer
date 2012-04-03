@@ -110,10 +110,6 @@ module Fog
 
       private
 
-      def existing_source_for(source)
-        sources.find { |s| s.match(source) }
-      end
-
       def source(source, &block)
         if existing = sources.find { |s| s.match(source) }
           existing.instance_eval(&block)
