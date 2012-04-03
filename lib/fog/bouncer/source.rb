@@ -4,14 +4,6 @@ module Fog
       attr_reader :group, :source
       attr_writer :local, :remote
 
-      def self.log(data, &block)
-        Fog::Bouncer.log({ source: true }.merge(data), &block)
-      end
-
-      def log(data, &block)
-        self.class.log({ source: source }.merge(data), &block)
-      end
-
       def initialize(source, group, &block)
         @source = source
         @group = group
