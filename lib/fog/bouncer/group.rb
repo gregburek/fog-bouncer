@@ -63,15 +63,6 @@ module Fog
         @sources = sources
       end
 
-      def ==(other)
-        name == other.name &&
-        description == other.description
-      end
-
-      def inspect
-        "<#{self.class.name} @name=#{name.inspect} @description=#{description.inspect} @local=#{local} @remote=#{remote} @sources=#{sources.inspect}>"
-      end
-
       def sync
         log(sync: true) do
           create_missing_remote
@@ -123,6 +114,15 @@ module Fog
             end
           end
         end
+      end
+
+      def ==(other)
+        name == other.name &&
+        description == other.description
+      end
+
+      def inspect
+        "<#{self.class.name} @name=#{name.inspect} @description=#{description.inspect} @local=#{local} @remote=#{remote} @sources=#{sources.inspect}>"
       end
 
       private

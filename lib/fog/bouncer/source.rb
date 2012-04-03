@@ -2,7 +2,7 @@ module Fog
   module Bouncer
     class Source
       attr_reader :group, :source
-      attr_accessor :local, :remote
+      attr_writer :local, :remote
 
       def self.log(data, &block)
         Fog::Bouncer.log({ source: true }.merge(data), &block)
@@ -15,13 +15,9 @@ module Fog
       def initialize(source, group, &block)
         @source = source
         @group = group
-        @local = false
-        @remote = false
         if block_given?
           @local = true
-          @wrap_local = true
           instance_eval(&block)
-          @wrap_local = false
         end
       end
 
@@ -37,6 +33,10 @@ module Fog
         else
           # raise
         end
+      end
+
+      def local
+        @local ||= false
       end
 
       def local?
@@ -55,8 +55,12 @@ module Fog
         @protocols = protocols
       end
 
+      def remote
+        @remote ||= false
+      end
+
       def remote?
-        remote
+        !!remote
       end
 
       def ==(other)
