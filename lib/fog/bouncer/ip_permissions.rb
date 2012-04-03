@@ -5,20 +5,17 @@ module Fog
         permissions = []
 
         protocols.each do |protocol|
-          if options[:remote_only]
-            next if protocol.local?
-          end
-          if options[:local_only]
-            next if protocol.remote?
-          end
+          next if (options[:remote_only] && protocol.local?) ||
+                  (options[:local_only] && protocol.remote?)
 
           source = protocol.source
-
           permission = permissions.find { |permission| permission["IpProtocol"] == protocol.type && permission["FromPort"] == protocol.from && permission["ToPort"] == protocol.to }
-          unless permission
+
+          if permission.nil?
             permission = { "Groups" => [], "IpRanges" => [], "IpProtocol" => protocol.type, "FromPort" => protocol.from, "ToPort" => protocol.to }
             permissions << permission
           end
+
           if source.is_a?(Fog::Bouncer::Sources::CIDR)
             permission["IpRanges"] << { "CidrIp" => source.range }
           else
