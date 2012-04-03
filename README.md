@@ -45,7 +45,7 @@ export AWS_ACCOUNT_ID=... \
        AWS_ACCESS_KEY_ID=... \
        AWS_SECRET_ACCESS_KEY=...
 
-fog-bouncer sync --file /tmp/fog-bouncer.rb
+fog-bouncer sync --list private --file /tmp/fog-bouncer.rb
 ```
 
 ## Environment
