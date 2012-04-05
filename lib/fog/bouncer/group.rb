@@ -52,8 +52,10 @@ module Fog
       def create_missing_remote
         unless remote?
           log(create_missing_remote: true) do
-            @remote = Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
-            @remote.reload
+            unless Fog::Bouncer.pretending?
+              @remote = Fog::Bouncer.fog.security_groups.create(:name => name, :description => description)
+              @remote.reload
+            end
           end
         end
       end
@@ -69,9 +71,11 @@ module Fog
         if remote?
           if name != "default"
             log(destroy: true) do
-              remote.destroy
-              @remote = nil
-              @security.groups.delete_if { |g| g.name == name }
+              unless Fog::Bouncer.pretending?
+                remote.destroy
+                @remote = nil
+                @security.groups.delete_if { |g| g.name == name }
+              end
             end
           else
             log(destroy: false, group_name: name)
@@ -86,10 +90,10 @@ module Fog
 
         if remote? && permissions.any?
           log(revoke: true) do
-            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => IPPermissions.from(permissions))
+            remote.connection.revoke_security_group_ingress(name, "IpPermissions" => IPPermissions.from(permissions)) unless Fog::Bouncer.pretending?
             permissions.each do |protocol|
               log({revoked: true}.merge(protocol.to_log))
-              protocol.source.protocols.delete_if { |p| p == protocol }
+              protocol.source.protocols.delete_if { |p| p == protocol } unless Fog::Bouncer.pretending?
             end
           end
         end

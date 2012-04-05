@@ -12,6 +12,21 @@ describe Fog::Bouncer::Security do
     @fog = Fog::Bouncer.fog
   end
 
+  describe "pretending" do
+    before do
+      Fog::Bouncer.pretend!
+      @groups = @fog.security_groups.all
+      @fog.security_groups.get('default').connection.authorize_security_group_ingress('default', "IpPermissions" => [{"Groups" => [], "IpRanges" => [{"CidrIp" => "0.0.0.0/0"}], "IpProtocol" => "icmp", "FromPort" => "-1", "ToPort" => "-1"}])
+      @doorlist.sync
+    end
+
+    it "should not sync anything" do
+      assert !@doorlist.groups.first.remote?
+      @fog.security_groups.get('default').ip_permissions.wont_be_empty
+      @fog.security_groups.size.must_equal @groups.size
+    end
+  end
+
   describe "#sync" do
     before do
       @doorlist.sync

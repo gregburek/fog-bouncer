@@ -32,7 +32,7 @@ module Fog
 
     def self.log(data, &block)
       log! unless logging?
-      Scrolls.log({ 'fog-bouncer' => true }.merge(data), &block)
+      Scrolls.log({ 'fog-bouncer' => true, 'pretending' => pretending? }.merge(data), &block)
     end
 
     def self.log!
@@ -58,6 +58,28 @@ module Fog
           instance_eval(File.read(file))
         end
       end
+    end
+
+    def self.pretend(&block)
+      if block_given?
+        @pretend = true
+        yield
+        @pretend = false
+      else
+        @pretend ||= false
+      end
+    end
+
+    def self.pretend=(value)
+      @pretend = value
+    end
+
+    def self.pretend!
+      @pretend = true
+    end
+
+    def self.pretending?
+      !!pretend
     end
 
     def self.reset
