@@ -18,7 +18,7 @@ Fog::Bouncer.security :private do
     end
 
     source "other@#{Fog::Bouncer.aws_account_id}" do
-      icmp -1
+      icmp :all
     end
   end
 

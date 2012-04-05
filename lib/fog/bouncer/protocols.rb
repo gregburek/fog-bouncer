@@ -57,7 +57,20 @@ module Fog
     end
 
     module Protocols
-      class ICMP < Protocol; end
+      class ICMP < Protocol
+        ICMP_MAPPING = {
+          all: -1,
+          ping: [8, 0]
+        }
+
+        def initialize(port, source)
+          if port.is_a?(Symbol) && range = ICMP_MAPPING[port]
+            port = range
+          end
+          super
+        end
+      end
+
       class TCP < Protocol; end
       class UDP < Protocol; end
     end
