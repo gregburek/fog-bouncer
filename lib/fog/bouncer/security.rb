@@ -1,15 +1,29 @@
 module Fog
   module Bouncer
+    class DefinitionNotFound < StandardError; end
+    class SourceBlockRequired < StandardError; end
     class Security
       attr_reader :name, :description
 
       def initialize(name, &block)
         @name = name
+        @definitions = {}
+        @using = []
         instance_eval(&block)
+        apply_definitions
       end
 
       def accounts
         @accounts ||= { 'amazon-elb' => 'amazon-elb', 'self' => Fog::Bouncer.aws_account_id }
+      end
+
+      def define(name, source, &block)
+        raise SourceBlockRequired unless block_given?
+        @definitions[name] = { source: source, block: block }
+      end
+
+      def definitions(name)
+        @definitions[name] || raise(DefinitionNotFound.new("No definition found for #{name}."))
       end
 
       def extra_remote_groups
@@ -36,6 +50,10 @@ module Fog
         GroupManager.new(self).synchronize
       end
 
+      def use(name)
+        @using << definitions(name)
+      end
+
       def clear_remote
         GroupManager.new(self).clear
       end
@@ -44,6 +62,16 @@ module Fog
 
       def account(name, account_id)
         accounts[name] = account_id
+      end
+
+      def apply_definitions
+        return if @using.empty?
+
+        @using.each do |definition|
+          @groups.each do |group|
+            group.add_source(definition[:source], &definition[:block])
+          end
+        end
       end
 
       def group(name, description, &block)

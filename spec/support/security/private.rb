@@ -1,13 +1,25 @@
 Fog::Bouncer.security :private do
   account "jersey_shore", Fog::Bouncer.aws_account_id
 
+  define :ping, "0.0.0.0/0" do
+    icmp :ping
+  end
+
+  define :ssh, "0.0.0.0/0" do
+    tcp 22
+  end
+
+  use :ssh
+
   group "douchebag", "Don't let them in!" do
+    use :ping
+
     source "1.1.1.1/1" do
       tcp 7070..8080, 80
     end
 
     source "0.0.0.0/0" do
-      icmp 8..0
+      icmp :ping
     end
   end
 

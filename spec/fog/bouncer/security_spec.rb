@@ -27,6 +27,15 @@ describe Fog::Bouncer::Security do
     end
   end
 
+  describe "use" do
+    it "should include any source definition specified in all groups" do
+      @doorlist.groups.each do |group|
+        next unless group.local?
+        group.sources.find { |s| s.source == "0.0.0.0/0" && s.protocols.find { |p| p.type == "tcp" && p.from == 22 && p.to == 22 } }.wont_be_nil
+      end
+    end
+  end
+
   describe "#sync" do
     before do
       @doorlist.sync

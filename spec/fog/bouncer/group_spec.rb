@@ -13,9 +13,20 @@ describe Fog::Bouncer do
     @doorlist.sync
   end
 
+
   describe Fog::Bouncer::Group do
     before do
       @group = @doorlist.groups.find { |g| g.name == 'douchebag' }
+    end
+
+    describe "use" do
+      it "should include any source definition specified" do
+        @group.sources.find { |s| s.source == "0.0.0.0/0" && s.protocols.find { |p| p.type == "icmp" && p.from == 8 && p.to == 0 } }.wont_be_nil
+      end
+
+      it "should not create duplicate sources" do
+        @group.sources.select { |s| s.source == "0.0.0.0/0" }.size.must_equal 1
+      end
     end
 
     describe "#extras" do

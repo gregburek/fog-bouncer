@@ -16,9 +16,11 @@ module Fog
         @name = name
         @description = description
         @security = security
+        @using = []
         if block_given?
           @local = true
           instance_eval(&block)
+          apply_definitions
         end
       end
 
@@ -42,11 +44,23 @@ module Fog
         @sources ||= []
       end
 
+      def add_source(source, &block)
+        if existing = sources.find { |s| s.match(source) }
+          existing.instance_eval(&block)
+        else
+          sources << Sources.for(source, self, &block)
+        end
+      end
+
       def sync
         log(sync: true) do
           create_missing_remote
           synchronize_sources
         end
+      end
+
+      def use(name)
+        @using << security.definitions(name)
       end
 
       def create_missing_remote
@@ -110,12 +124,16 @@ module Fog
 
       private
 
-      def source(source, &block)
-        if existing = sources.find { |s| s.match(source) }
-          existing.instance_eval(&block)
-        else
-          sources << Sources.for(source, self, &block)
+      def apply_definitions
+        return if @using.empty?
+
+        @using.each do |definition|
+          add_source(definition[:source], &definition[:block])
         end
+      end
+
+      def source(source, &block)
+        add_source(source, &block)
       end
     end
   end
