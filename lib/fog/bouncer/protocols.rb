@@ -60,7 +60,7 @@ module Fog
       class ICMP < Protocol
         ICMP_MAPPING = {
           all: -1,
-          ping: [8, 0]
+          ping: 8..0
         }
 
         def initialize(port, source)
