@@ -38,14 +38,29 @@ Fog::Bouncer.security :private do
 end
 ```
 
-### CLI
+### Console
 
 ```
-export AWS_ACCOUNT_ID=... \
+➜  ~  export AWS_ACCOUNT_ID=... \
        AWS_ACCESS_KEY_ID=... \
        AWS_SECRET_ACCESS_KEY=...
 
-fog-bouncer sync --list private --file /tmp/fog-bouncer.rb
+➜  ~  irb
+1.9.3p0 :001 > require 'fog/bouncer'
+=> true
+1.9.3p0 :002 > doorlist = Fog::Bouncer.load('/tmp/fog-bouncer.rb')
+1.9.3p0 :003 > doorlist.import_remote_groups
+1.9.3p0 :004 > doorlist.sync
+```
+
+### CLI (TBD)
+
+```
+➜  ~  export AWS_ACCOUNT_ID=... \
+       AWS_ACCESS_KEY_ID=... \
+       AWS_SECRET_ACCESS_KEY=...
+
+➜  ~  fog-bouncer sync --list private --file /tmp/fog-bouncer.rb
 ```
 
 ## Environment
