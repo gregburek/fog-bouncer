@@ -15,6 +15,7 @@ module Fog
       def initialize(port, source)
         @from, @to = Protocol.range(port)
         @source = source
+        validate
       end
 
       def local
@@ -61,11 +62,16 @@ module Fog
     end
 
     module Protocols
+      class InvalidICMPType < StandardError; end
+      class InvalidPort < StandardError; end
+
       class ICMP < Protocol
         ICMP_MAPPING = {
           all: -1,
           ping: 8..0
         }
+
+        ICMP_TYPE_RANGE = (-1..255)
 
         def initialize(port, source)
           if port.is_a?(Symbol) && range = ICMP_MAPPING[port]
@@ -81,10 +87,29 @@ module Fog
             super
           end
         end
+
+        private
+
+        def validate
+          raise InvalidICMPType.new("Must be between and including -1 and 255.") unless ICMP_TYPE_RANGE.include?(from)
+        end
       end
 
-      class TCP < Protocol; end
-      class UDP < Protocol; end
+      class TCP < Protocol
+        private
+
+        def validate
+          raise InvalidPort.new("Invalid port #{from}. Must be between and including 0 and 65535.") unless (0..65535).include?(from)
+        end
+      end
+
+      class UDP < Protocol
+        private
+
+        def validate
+          raise InvalidPort.new("Invalid port #{from}. Must be between and including 0 and 65535.") unless (0..65535).include?(from)
+        end
+      end
     end
   end
 end
