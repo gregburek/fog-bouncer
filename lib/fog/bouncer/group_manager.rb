@@ -51,7 +51,14 @@ module Fog
       def remove_extra_remote_groups
         @security.extra_remote_groups.each do |group|
           log(remove_extra_remote_group: true, group_name: group.name) do
-            group.destroy
+            begin
+              group.destroy
+            rescue Fog::Compute::AWS::Error => exception
+              unless exception.message =~ /InvalidGroup.InUse/
+                raise
+              end
+              log group_in_use: true, group_name: group.name
+            end
           end
         end
       end
