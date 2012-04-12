@@ -1,4 +1,5 @@
 require "fog/bouncer/source"
+require "ipaddress"
 
 module Fog
   module Bouncer
@@ -12,6 +13,11 @@ module Fog
       end
 
       class CIDR < Fog::Bouncer::Source
+        def initialize(source, group, &block)
+          source = IPAddress::IPv4.new(source).to_string
+          super
+        end
+
         def match(source)
           range == source
         end
