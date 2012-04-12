@@ -6,7 +6,7 @@ Gem::Specification.new do |gem|
   gem.email         = ["dylanegan@gmail.com"]
   gem.description   = %q{A simple way to define and manage security groups for AWS with the backing support of fog.}
   gem.summary       = %q{A manage security.}
-  gem.homepage      = ""
+  gem.homepage      = "https://github.com/dylanegan/fog-bouncer"
 
   gem.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   gem.files         = `git ls-files`.split("\n")
