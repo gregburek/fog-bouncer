@@ -18,8 +18,7 @@ module Fog
       end
 
       def add_protocol(type, port)
-        from, to = Protocol.range(port)
-        protocol = protocols.find { |p| p.type == type && p.from == from && p.to == to }
+        protocol = protocols.find { |p| p.match(type, port) }
         if protocol.nil?
           protocol = case type.to_sym
           when :icmp

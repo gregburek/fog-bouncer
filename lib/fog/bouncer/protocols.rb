@@ -25,6 +25,10 @@ module Fog
         !!local
       end
 
+      def match(type, port)
+        type.to_s == self.type && Protocol.range(port) == [from, to]
+      end
+
       def remote
         @remote ||= false
       end
@@ -68,6 +72,14 @@ module Fog
             port = range
           end
           super
+        end
+
+        def match(type, port)
+          if port.is_a?(Symbol) && range = ICMP_MAPPING[port]
+            type.to_s == self.type && Protocol.range(range) == [from, to]
+          else
+            super
+          end
         end
       end
 
