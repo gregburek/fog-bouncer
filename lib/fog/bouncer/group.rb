@@ -128,7 +128,9 @@ module Fog
         return if @using.empty?
 
         @using.each do |definition|
-          add_source(definition[:source], &definition[:block])
+          definition[:sources].each do |source|
+            add_source(source, &definition[:block])
+          end
         end
       end
 
