@@ -5,16 +5,23 @@ module Fog
   module Bouncer
     module Sources
       def self.for(source, group, &block)
-        if source =~ /^\d+\.\d+\.\d+.\d+\/\d+$/
+        begin
           CIDR.new(source, group, &block)
-        else
-          Group.new(source, group, &block)
+        rescue ArgumentError => e
+          if e.message =~ /Invalid IP/
+            Group.new(source, group, &block)
+          else
+            raise e
+          end
         end
       end
 
       class CIDR < Fog::Bouncer::Source
+        attr_reader :ip
+
         def initialize(source, group, &block)
-          source = IPAddress::IPv4.new(source).to_string
+          @ip = IPAddress::IPv4.new(source)
+          source = @ip.to_string
           super
         end
 
