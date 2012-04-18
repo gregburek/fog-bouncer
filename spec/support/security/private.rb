@@ -5,7 +5,7 @@ Fog::Bouncer.security :private do
     icmp :ping
   end
 
-  define :ssh, "0.0.0.0/0" do
+  define :ssh, ["0.0.0.0/0", "1.1.1.1/1"] do
     tcp 22
   end
 

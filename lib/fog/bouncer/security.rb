@@ -17,9 +17,9 @@ module Fog
         @accounts ||= { 'amazon-elb' => 'amazon-elb', 'self' => Fog::Bouncer.aws_account_id }
       end
 
-      def define(name, source, &block)
+      def define(name, sources, &block)
         raise SourceBlockRequired unless block_given?
-        @definitions[name] = { source: source, block: block }
+        @definitions[name] = { sources: Array(sources), block: block }
       end
 
       def definitions(name)
@@ -69,7 +69,9 @@ module Fog
 
         @using.each do |definition|
           @groups.each do |group|
-            group.add_source(definition[:source], &definition[:block])
+            definition[:sources].each do |source|
+              group.add_source(source, &definition[:block])
+            end
           end
         end
       end
