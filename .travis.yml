@@ -1,0 +1,9 @@
+env: NO_SIMPLECOV=true
+
+rvm:
+  - 1.9.2
+  - 1.9.3
+  - jruby
+  - rbx
+
+script: bundle exec rake test --trace
