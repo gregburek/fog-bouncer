@@ -18,6 +18,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "clamp", "~> 0.3.0"
   gem.add_dependency "fog", "~> 1.2.0"
   gem.add_dependency "ipaddress", "~> 0.8.0"
+  gem.add_dependency "jruby-openssl", "~> 0.7.6" if RUBY_PLATFORM == "java"
   gem.add_dependency "rake"
   gem.add_dependency "scrolls", "~> 0.0.5"
 
