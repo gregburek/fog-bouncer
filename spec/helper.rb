@@ -1,4 +1,4 @@
-require "simplecov"
+require "simplecov" unless ENV['NO_SIMPLECOV']
 require 'minitest/autorun'
 
 ENV['AWS_ACCESS_KEY_ID'] ||= "abcde1234"
