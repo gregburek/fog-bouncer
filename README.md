@@ -2,6 +2,8 @@
 
 ![fog-bouncer](https://github.com/dylanegan/fog-bouncer/raw/master/bouncer.jpg)
 
+[![Build Status](https://secure.travis-ci.org/dylanegan/fog-bouncer.png?branch=master)](http://travis-ci.org/dylanegan/fog-bouncer)
+
 A simple way to define and manage security groups for AWS with the backing support from fog.
 
 ## Usage
