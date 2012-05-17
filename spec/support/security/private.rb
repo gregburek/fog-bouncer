@@ -9,6 +9,10 @@ Fog::Bouncer.security :private do
     tcp 22
   end
 
+  define :multiple_sources, "douchebag@jersey_shore" do
+    tcp 70
+  end
+
   use :ssh
 
   group "douchebag", "Don't let them in!" do
@@ -24,6 +28,8 @@ Fog::Bouncer.security :private do
   end
 
   group "guido", "Definitely don't let them in!" do
+    use :multiple_sources
+
     source "douchebag@jersey_shore" do
       tcp 7070..8080
       udp 8081

@@ -56,7 +56,7 @@ module Fog
         end
 
         def match(source)
-          "#{name}@#{user_id}" == source || name == source
+          "#{name}@#{user_id}" == source || "#{name}@#{user_alias}" == source || name == source
         end
 
         def user_id

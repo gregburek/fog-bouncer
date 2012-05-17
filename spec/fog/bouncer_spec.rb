@@ -41,5 +41,12 @@ describe Fog::Bouncer do
       source.user_id.must_equal ENV['AWS_ACCOUNT_ID']
       source.name.must_equal "douchebag"
     end
+
+    it "doesn't create duplicate sources" do
+      guido = @doorlist.groups.find { |g| g.name == "guido" }
+
+      guido.sources.size.must_equal 4
+      guido.sources.select { |s| s.source == "douchebag@jersey_shore" }.size.must_equal 1
+    end
   end
 end
