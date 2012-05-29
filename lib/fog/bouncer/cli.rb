@@ -1,10 +1,16 @@
 require "clamp"
-
 require "fog/bouncer"
+require "scrolls"
 
 module Fog
   module Bouncer
     module CLI
+      class Logger
+        def self.log(data, &block)
+          Scrolls.log(data, &block)
+        end
+      end
+
       def self.run(*a)
         MainCommand.run(*a)
       end
@@ -70,3 +76,6 @@ module Fog
     end
   end
 end
+
+Scrolls::Log.start(STDOUT)
+Fog::Bouncer.instrument_with(Fog::Bouncer::CLI::Logger.method(:log))

@@ -6,8 +6,17 @@ ENV['AWS_SECRET_ACCESS_KEY'] ||= "abcde1234"
 ENV['AWS_ACCOUNT_ID'] ||= "1234567890"
 
 require "fog/bouncer"
+require "scrolls"
 
-Fog::Bouncer.logger = File.open(File.dirname(__FILE__) + '/../logs/test.log', 'w')
+Scrolls::Log.start(File.open(File.dirname(__FILE__) + '/../logs/test.log', 'w'))
+
+module TestLogger
+  def self.log(data, &blk)
+    Scrolls.log(data, &blk)
+  end
+end
+
+Fog::Bouncer.instrument_with(TestLogger.method(:log))
 
 def load_security(security)
   Fog::Bouncer.load File.dirname(__FILE__) + "/support/security/#{security}.rb"
