@@ -20,15 +20,35 @@ module Fog
           ENV['AWS_SECRET_ACCESS_KEY'] = key
         end
 
+        option ["--confirm"], "CONFIRMATION", "Confirm dangerous action", :attribute_name => :confirmation
+
         option ["--file", "-f"], "FILE", "Doorlist"
 
         option ["--groups", "-g"], "GROUPS", "Comma separated list of groups", :default => [] do |groups|
           groups.split(',')
         end
 
+        option ["--pretend"], :flag, "Run in pretend mode" do
+          Fog::Bouncer.pretend!
+        end
+
         option "--version", :flag, "show version" do
           puts "fog-bounder #{Fog::Bouncer::VERSION}"
           exit 0
+        end
+
+        def confirm
+          unless confirmation
+            puts
+            puts " !    WARNING: This action is not marked as being safe."
+            puts " !    To proceed, enter \"confirmation\" or re-run this command with --confirm confirmation"
+            puts
+            print "> "
+
+            confirmation = $stdin.gets.chomp
+          end
+
+          confirmation == "confirmation" || raise("Confirmation failed")
         end
 
         def file

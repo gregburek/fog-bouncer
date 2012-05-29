@@ -184,8 +184,16 @@ module Fog
     # Returns a Fog::Bouncer::Security object
     def self.security(name, &block)
       Fog::Bouncer.log(security: true, name: name) do
-        doorlists[name] = Fog::Bouncer::Security.new(name, &block)
+        doorlists[name] = Fog::Bouncer::Security.new(name, specific_groups, &block)
       end
+    end
+
+    def self.specific_groups
+      @specific_groups ||= []
+    end
+
+    def self.specific_groups=(groups)
+      @specific_groups = Array(groups)
     end
   end
 end

@@ -2,14 +2,25 @@ module Fog
   module Bouncer
     module CLI
       class DiffCommand < AbstractCommand
-        def execute
-          specific_groups = groups
+        option ["--diff-format"], "DIFF_FORMAT", "The diff output format (ec2)", :default => :ec2
+        option ["--apply"], :flag, "Apply the differences"
 
+        def execute
+          Fog::Bouncer.specific_groups = groups
           doorlist = Fog::Bouncer.load(file)
           doorlist.import_remote_groups
           groups = doorlist.groups
-          groups = groups.select { |g| specific_groups.include?(g.name) } if specific_groups.any?
 
+          Fog::Bouncer::CLI::Diff.for(groups, diff_format)
+
+          if apply? && confirm
+            doorlist.sync
+          end
+        end
+      end
+
+      class Diff
+        def self.for(groups, diff_format)
           groups.each do |group|
             if group.local? && !group.remote?
               puts "ec2-create-group #{group.name} -d '#{group.description}'"

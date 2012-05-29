@@ -5,9 +5,10 @@ module Fog
     class Security
       attr_reader :name, :description
 
-      def initialize(name, &block)
+      def initialize(name, specific_groups = [], &block)
         @name = name
         @definitions = {}
+        @specific_groups = specific_groups
         @using = []
         instance_eval(&block)
         apply_definitions
@@ -36,6 +37,7 @@ module Fog
 
       def import_remote_groups
         Fog::Bouncer.fog.security_groups.each do |remote_group|
+          next if @specific_groups.any? && !@specific_groups.include?(remote_group.name)
           group = group(remote_group.name, remote_group.description)
           group.remote = remote_group
           IPPermissions.to(group, remote_group.ip_permissions) if remote_group.ip_permissions
@@ -77,6 +79,7 @@ module Fog
       end
 
       def group(name, description, &block)
+        return if @specific_groups.any? && !@specific_groups.include?(name)
         group = groups.find { |group| group.name == name }
         if group.nil?
           group = Group.new(name, description, self, &block)
