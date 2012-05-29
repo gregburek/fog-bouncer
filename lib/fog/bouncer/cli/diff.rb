@@ -6,12 +6,11 @@ module Fog
         option ["--apply"], :flag, "Apply the differences"
 
         def execute
-          Fog::Bouncer.specific_groups = groups
           doorlist = Fog::Bouncer.load(file)
           doorlist.import_remote_groups
           groups = doorlist.groups
 
-          Fog::Bouncer::CLI::Diff.for(groups, diff_format)
+          Fog::Bouncer::CLI::Diff.for(doorlist, diff_format)
 
           if apply? && confirm
             doorlist.sync
@@ -20,8 +19,8 @@ module Fog
       end
 
       class Diff
-        def self.for(groups, diff_format)
-          groups.each do |group|
+        def self.for(doorlist, diff_format)
+          doorlist.groups.each do |group|
             if group.local? && !group.remote?
               puts "ec2-create-group #{group.name} -d '#{group.description}'"
             end

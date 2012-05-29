@@ -25,7 +25,7 @@ module Fog
         option ["--file", "-f"], "FILE", "Doorlist"
 
         option ["--groups", "-g"], "GROUPS", "Comma separated list of groups", :default => [] do |groups|
-          groups.split(',')
+          Fog::Bouncer.specific_groups = groups.split(',')
         end
 
         option ["--pretend"], :flag, "Run in pretend mode" do
@@ -33,7 +33,7 @@ module Fog
         end
 
         option "--version", :flag, "show version" do
-          puts "fog-bounder #{Fog::Bouncer::VERSION}"
+          puts "fog-bouncer #{Fog::Bouncer::VERSION}"
           exit 0
         end
 
