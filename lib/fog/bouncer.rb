@@ -9,8 +9,6 @@ require "fog/bouncer/ip_permissions"
 require "fog/bouncer/group_manager"
 require "fog/bouncer/source_manager"
 
-require "scrolls"
-
 module Fog
   module Bouncer
     # Public: An AWS account ID
@@ -54,54 +52,36 @@ module Fog
       )
     end
 
-    # Public: Log data through Scrolls
+    # Public: Allows the user to specify a logger for the log messages that Fog::Bouncer
+    # produces.
     #
-    # Example
+    # logger = The object you want logs to be sent too
     #
-    #   Fog::Bouncer.log(data_one: true, data_two: true)
+    # Examples
     #
-    # Returns nothing
-    def self.log(data, &block)
-      log! unless logging?
-      Scrolls.log({ 'fog-bouncer' => true, 'pretending' => pretending? }.merge(data), &block)
+    #   Fog::Bouncer.instrument_with(STDOUT.method(:puts))
+    #   # => #<Method: IO#puts>
+    #
+    # Returns the logger object
+    def self.instrument_with(logger)
+      @logger = logger
     end
 
-    # Public: Start the Scrolls logger
+    # Internal: Top level log method for use by Fog::Bouncer
     #
-    # Example
+    # data = Logging data (typically a hash)
+    # blk  = block to execute
     #
-    #   Fog::Bouncer.log!
-    #
-    # Returns nothing
-    def self.log!
-      Scrolls::Log.start(logger)
-      @logging = true
+    # Returns the response from calling the logger with the arguments
+    def self.log(data, &blk)
+      logger.call({ 'fog-bouncer' => true, 'pretending' => pretending? }.merge(data), &blk)
     end
 
     # Public: The logging location
     #
     # Returns an Object
     def self.logger
-      @logger ||= STDOUT
-    end
-
-    # Public: Set the logging location
-    #
-    # Returns nothing
-    def self.logger=(logger)
-      @logger = logger
-    end
-
-    # Public: Check the logging state
-    #
-    # Example
-    #
-    #   Fog::Bouncer.logging?
-    #   # => true
-    #
-    # Returns false or true if logging has been started
-    def self.logging?
-      @logging ||= false
+      @logger || STDOUT.method(:puts)
     end
 
     # Public: Load a file for evaluation
@@ -184,8 +164,16 @@ module Fog
     # Returns a Fog::Bouncer::Security object
     def self.security(name, &block)
       Fog::Bouncer.log(security: true, name: name) do
-        doorlists[name] = Fog::Bouncer::Security.new(name, &block)
+        doorlists[name] = Fog::Bouncer::Security.new(name, specific_groups, &block)
       end
+    end
+
+    def self.specific_groups
+      @specific_groups ||= []
+    end
+
+    def self.specific_groups=(groups)
+      @specific_groups = Array(groups)
     end
   end
 end

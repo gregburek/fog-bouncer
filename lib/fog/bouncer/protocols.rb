@@ -18,6 +18,10 @@ module Fog
         validate
       end
 
+      def group
+        source.group
+      end
+
       def local
         @local ||= false
       end
