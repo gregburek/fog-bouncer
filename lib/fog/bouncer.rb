@@ -11,6 +11,13 @@ require "fog/bouncer/source_manager"
 
 module Fog
   module Bouncer
+    module Logger
+      def self.log(data, &block)
+        STDOUT.puts data
+        yield if block_given?
+      end
+    end
+
     # Public: An AWS account ID
     #
     # Example
@@ -81,7 +88,7 @@ module Fog
     #
     # Returns an Object
     def self.logger
-      @logger || STDOUT.method(:puts)
+      @logger || Fog::Bouncer::Logger.method(:log)
     end
 
     # Public: Load a file for evaluation
