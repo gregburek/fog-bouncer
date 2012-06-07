@@ -25,7 +25,7 @@ module Fog
       end
 
       def extra_remote_sources
-        sources.select { |source| !source.local? && source.remote? }
+        sources.select { |source| !source.ignored? && !source.local? && source.remote? }
       end
 
       def local?
@@ -33,7 +33,7 @@ module Fog
       end
 
       def missing_remote_sources
-        sources.select { |source| source.local? && !source.remote? }
+        sources.select { |source| !source.ignored? && source.local? && !source.remote? }
       end
 
       def remote?

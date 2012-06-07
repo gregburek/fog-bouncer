@@ -2,7 +2,7 @@ module Fog
   module Bouncer
     class Source
       attr_reader :group, :source
-      attr_writer :local, :remote
+      attr_writer :ignore, :local, :remote
 
       def initialize(source, group, &block)
         @source = source
@@ -33,6 +33,14 @@ module Fog
         end
 
         protocol
+      end
+
+      def ignore
+        @ignore ||= false
+      end
+
+      def ignored?
+        ignore
       end
 
       def local

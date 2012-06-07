@@ -17,7 +17,7 @@ module Fog
         log(synchronize: true) do
           create_missing_source_permissions
           remove_extra_source_permissions
-          @group.sources.each { |s| s.remote = true } unless Fog::Bouncer.pretending?
+          @group.sources.each { |s| next if s.ignored?; s.remote = true } unless Fog::Bouncer.pretending?
         end
       end
 
@@ -35,6 +35,7 @@ module Fog
 
       def missing_source_permissions
         @group.sources.map do |source|
+          next if source.ignored?
           source.protocols.select { |p| p.local? && !p.remote? }
         end.flatten.compact
       end
@@ -51,6 +52,7 @@ module Fog
 
       def extra_source_permissions
         @group.sources.map do |source|
+          next if source.ignored?
           source.protocols.select { |p| !p.local? && p.remote? }
         end.flatten.compact
       end

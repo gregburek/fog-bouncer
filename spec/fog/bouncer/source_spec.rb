@@ -45,5 +45,31 @@ describe Fog::Bouncer do
         @missing.must_equal [@protocol]
       end
     end
+
+    describe "ignoreable" do
+      before do
+        @group = @doorlist.groups.first
+        @group.sync
+        @source = Fog::Bouncer::Sources.for("4.4.4.4/1", @group)
+        @source.protocols << Fog::Bouncer::Protocols::TCP.new(44, @source)
+        @group.sources << @source
+        @source.ignore = true
+      end
+
+      it "does not try to manage this source" do
+        @source.local = false
+        @source.remote = true
+        @group.extra_remote_sources.wont_include @source
+
+        @source.remote = false
+        @source.local = true
+        @group.missing_remote_sources.wont_include @source
+
+        @group.sync
+
+        @group.remote.ip_permissions.find { |perm| perm['ipProtocol'] == "tcp" && perm['fromPort'] == 90 }.must_be_nil
+        @source.remote.must_equal false
+      end
+    end
   end
 end
