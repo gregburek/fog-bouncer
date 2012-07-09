@@ -53,6 +53,7 @@ module Fog
     def self.fog
       @fog ||= Fog::Compute.new(
         :provider => "AWS",
+        :endpoint => (ENV['AWS_COMPUTE_ENDPOINT'] || ''),
         :region => (ENV['PROVIDER_REGION'] || 'us-east-1'),
         :aws_access_key_id => ENV['AWS_ACCESS_KEY_ID'],
         :aws_secret_access_key => ENV['AWS_SECRET_ACCESS_KEY']
